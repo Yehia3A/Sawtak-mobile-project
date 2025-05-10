@@ -1,10 +1,30 @@
 {
   "project_info": {
     "project_number": "806610414222",
+    "firebase_url": "https://gov-citizen-app-691b1-default-rtdb.firebaseio.com",
     "project_id": "gov-citizen-app-691b1",
     "storage_bucket": "gov-citizen-app-691b1.firebasestorage.app"
   },
   "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:806610414222:android:f7e724b96dacc4949077df",
+        "android_client_info": {
+          "package_name": "com.example.gov_citizen_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBM1KRVRJRE3sHq1jpgFYIyvJDVlG3M8hE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
     {
       "client_info": {
         "mobilesdk_app_id": "1:806610414222:android:4f464723aae400f09077df",

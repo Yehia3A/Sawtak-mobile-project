@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 
 class HomeGovernment extends StatelessWidget {
-  const HomeGovernment({Key? key}) : super(key: key);
+  const HomeGovernment({super.key});
 
   @override
   Widget build(BuildContext context) {

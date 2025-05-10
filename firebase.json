@@ -1,0 +1,25 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "gov-citizen-app-691b1",
+          "appId": "1:806610414222:android:f7e724b96dacc4949077df",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "gov-citizen-app-691b1",
+          "configurations": {
+            "android": "1:806610414222:android:f7e724b96dacc4949077df",
+            "ios": "1:806610414222:ios:69fe13b9f179a9ee9077df",
+            "macos": "1:806610414222:ios:69fe13b9f179a9ee9077df",
+            "web": "1:806610414222:web:9cab507d3d7eb16b9077df",
+            "windows": "1:806610414222:web:7102e0ed2e6cff439077df"
+          }
+        }
+      }
+    }
+  }
+}
