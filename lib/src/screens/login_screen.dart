@@ -64,7 +64,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 key: _formKey,
                 child: Column(
                   children: [
-                    Image.asset('assets/logo/logo.png', width: 80),
+                    // Image.asset('assets/logo/logo.png', width: 80),  // Commented out temporarily
                     const SizedBox(height: 24),
 
                     // Email field
