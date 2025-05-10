@@ -16,15 +16,11 @@ class MyApp extends StatelessWidget {
       title: 'Sawtak',
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark(),
-      // The AuthWrapper will listen for FirebaseAuth state changes
-      // and route the user to WelcomePage or the correct Home screen.
-      home: const AuthWrapper(),
-
-      // Named routes for the unauthenticated flow:
       routes: {
+        '/': (context) => const AuthWrapper(),
         WelcomePage.routeName: (_) => const WelcomePage(),
-        LoginScreen.routeName: (_)   => const LoginScreen(),
-        SignUpScreen.routeName: (_)  => const SignUpScreen(),
+        LoginScreen.routeName: (_) => const LoginScreen(),
+        SignUpScreen.routeName: (_) => const SignUpScreen(),
       },
     );
   }

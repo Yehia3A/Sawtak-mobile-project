@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 
 class HomeCitizen extends StatelessWidget {
-  const HomeCitizen({Key? key}) : super(key: key);
+  const HomeCitizen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -19,10 +19,7 @@ class HomeCitizen extends StatelessWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Sawtak – Citizen'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('Sawtak – Citizen'), centerTitle: true),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

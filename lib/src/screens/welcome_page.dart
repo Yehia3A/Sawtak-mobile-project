@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'login_screen.dart';
 import 'signup_screen.dart';
 
-
 class WelcomePage extends StatelessWidget {
   static const routeName = '/';
   const WelcomePage({super.key});
@@ -13,7 +12,7 @@ class WelcomePage extends StatelessWidget {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          Image.asset('assets/welcome.jpg', fit: BoxFit.cover,),
+          Image.asset('assets/welcome.jpg', fit: BoxFit.cover),
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -30,30 +29,39 @@ class WelcomePage extends StatelessWidget {
               const SizedBox(height: 16),
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 32),
-                child: Text(
-                  'E',
-                  textAlign: TextAlign.center,
-                ),
+                child: Text('E', textAlign: TextAlign.center),
               ),
               const SizedBox(height: 32),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   OutlinedButton(
-                    onPressed: () => Navigator.pushNamed(context, LoginScreen.routeName),
-                    child: const Text('Login'),
+                    onPressed:
+                        () =>
+                            Navigator.pushNamed(context, LoginScreen.routeName),
                     style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
                       side: const BorderSide(color: Colors.white),
                     ),
+                    child: const Text('Login'),
                   ),
                   const SizedBox(width: 16),
                   ElevatedButton(
-                    onPressed: () => Navigator.pushNamed(context, SignUpScreen.routeName),
-                    child: const Text('Register'),
+                    onPressed:
+                        () => Navigator.pushNamed(
+                          context,
+                          SignUpScreen.routeName,
+                        ),
                     style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
                     ),
+                    child: const Text('Register'),
                   ),
                 ],
               ),

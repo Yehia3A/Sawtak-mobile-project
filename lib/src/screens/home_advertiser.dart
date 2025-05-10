@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 
 class HomeAdvertiser extends StatelessWidget {
-  const HomeAdvertiser({Key? key}) : super(key: key);
+  const HomeAdvertiser({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -26,9 +26,7 @@ class HomeAdvertiser extends StatelessWidget {
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          children: [
-            buildButton(Icons.campaign, 'Post Advertisement'),
-          ],
+          children: [buildButton(Icons.campaign, 'Post Advertisement')],
         ),
       ),
     );
