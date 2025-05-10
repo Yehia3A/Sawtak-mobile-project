@@ -1,20 +1,30 @@
+// lib/src/app.dart
+
 import 'package:flutter/material.dart';
+
+import 'src/screens/auth_wrapper.dart';
 import 'src/screens/welcome_page.dart';
 import 'src/screens/login_screen.dart';
 import 'src/screens/signup_screen.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Sawtak',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData.dark(),
-      initialRoute: WelcomePage.routeName,
+      // The AuthWrapper will listen for FirebaseAuth state changes
+      // and route the user to WelcomePage or the correct Home screen.
+      home: const AuthWrapper(),
+
+      // Named routes for the unauthenticated flow:
       routes: {
         WelcomePage.routeName: (_) => const WelcomePage(),
-        LoginScreen.routeName: (_) => const LoginScreen(),
-        SignUpScreen.routeName: (_) => const SignUpScreen(),
+        LoginScreen.routeName: (_)   => const LoginScreen(),
+        SignUpScreen.routeName: (_)  => const SignUpScreen(),
       },
     );
   }
