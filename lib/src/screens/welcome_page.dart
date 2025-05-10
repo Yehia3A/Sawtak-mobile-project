@@ -12,7 +12,17 @@ class WelcomePage extends StatelessWidget {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          Image.asset('assets/welcome.jpg', fit: BoxFit.cover),
+          Image.asset(
+            './assets/homepage.jpg',
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              print('Error loading image: $error');
+              return Container(
+                color: Colors.grey[300],
+                child: const Center(child: Text('Image not found')),
+              );
+            },
+          ),
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
