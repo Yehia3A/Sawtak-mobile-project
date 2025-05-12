@@ -9,7 +9,7 @@ class AuthService {
   Stream<User?> get authStateChanges => _fb.authStateChanges();
 
   /// Sign up with email & password
-  Future<UserCredential> signUp(String email, String password) =>
+  Future<UserCredential> signUp(String email, String password) async =>
       _fb.createUserWithEmailAndPassword(email: email, password: password);
 
   /// Sign in with email & password
