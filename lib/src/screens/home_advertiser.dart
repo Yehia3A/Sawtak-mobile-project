@@ -1,32 +1,203 @@
 // lib/src/screens/home_advertiser.dart
 
 import 'package:flutter/material.dart';
+import '../services/auth_service.dart';
 
 class HomeAdvertiser extends StatelessWidget {
   const HomeAdvertiser({super.key});
 
   @override
   Widget build(BuildContext context) {
-    Widget buildButton(IconData icon, String label) {
-      return ElevatedButton.icon(
-        onPressed: () {},
-        icon: Icon(icon),
-        label: Text(label),
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-        ),
-      );
-    }
-
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Sawtak – Advertiser'),
-        centerTitle: true,
+      body: Stack(
+        children: [
+          // Background Image
+          Image.asset(
+            'assets/homepage.jpg',
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: double.infinity,
+          ),
+          // Dark overlay for better text visibility
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.4),
+            ),
+          ),
+          // Content
+          SafeArea(
+            child: Column(
+              children: [
+                // App Bar
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Advertiser Portal',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.logout, color: Colors.white),
+                        onPressed: () async {
+                          await AuthService().signOut();
+                          if (context.mounted) {
+                            Navigator.pushReplacementNamed(context, '/');
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                // Stats Summary
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    children: [
+                      _buildStatCard('Active Ads', '5', Colors.green),
+                      const SizedBox(width: 16),
+                      _buildStatCard('Total Views', '2.4K', Colors.blue),
+                      const SizedBox(width: 16),
+                      _buildStatCard('Engagement', '12%', Colors.orange),
+                    ],
+                  ),
+                ),
+                // Main Content
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: GridView.count(
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 16,
+                      crossAxisSpacing: 16,
+                      children: [
+                        _buildFeatureCard(
+                          context,
+                          'Create Ad',
+                          Icons.add_circle,
+                          () {
+                            // TODO: Implement ad creation
+                          },
+                        ),
+                        _buildFeatureCard(
+                          context,
+                          'My Ads',
+                          Icons.campaign,
+                          () {
+                            // TODO: Implement ads management
+                          },
+                        ),
+                        _buildFeatureCard(
+                          context,
+                          'Analytics',
+                          Icons.analytics,
+                          () {
+                            // TODO: Implement analytics
+                          },
+                        ),
+                        _buildFeatureCard(
+                          context,
+                          'Payments',
+                          Icons.payment,
+                          () {
+                            // TODO: Implement payments
+                          },
+                        ),
+                        _buildFeatureCard(
+                          context,
+                          'Support',
+                          Icons.support_agent,
+                          () {
+                            // TODO: Implement support
+                          },
+                        ),
+                        _buildFeatureCard(
+                          context,
+                          'Settings',
+                          Icons.settings,
+                          () {
+                            // TODO: Implement settings
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
+    );
+  }
+
+  Widget _buildStatCard(String title, String value, Color color) {
+    return Expanded(
+      child: Card(
+        color: Colors.white.withOpacity(0.9),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[700],
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFeatureCard(
+    BuildContext context,
+    String title,
+    IconData icon,
+    VoidCallback onTap,
+  ) {
+    return Card(
+      elevation: 4,
+      color: Colors.white.withOpacity(0.9),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
         child: Column(
-          children: [buildButton(Icons.campaign, 'Post Advertisement')],
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 40,
+              color: Theme.of(context).primaryColor,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
         ),
       ),
     );

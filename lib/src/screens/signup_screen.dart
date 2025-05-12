@@ -56,6 +56,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
         cred.user!.uid,
         _emailController.text.trim(),
         _role!,
+        _firstNameController.text.trim(),
+        _lastNameController.text.trim(),
+        _passwordController.text.trim(),
       );
 
       // 3) Navigate to the root (AuthWrapper will pick up and redirect)

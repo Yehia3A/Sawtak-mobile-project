@@ -15,6 +15,7 @@ dependencies {
     // … any other libs …
 }
 
+
 android {
     namespace = "com.example.gov_citizen_app"
     compileSdk = flutter.compileSdkVersion

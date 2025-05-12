@@ -4,10 +4,20 @@ class UserService {
   final _fs = FirebaseFirestore.instance.collection('users');
 
   // Create a new user document
-  Future<void> createUserDoc(String uid, String email, String role) async {
+  Future<void> createUserDoc(
+    String uid,
+    String email,
+    String role,
+    String firstName,
+    String lastName,
+    String password,
+  ) async {
     try {
       await _fs.doc(uid).set({
         'email': email,
+        'firstName': firstName,
+        'lastName': lastName,
+        'password': password,
         'role': role, // 'Citizen' | 'Gov Admin' | 'Advertiser'
         'createdAt': FieldValue.serverTimestamp(),
         'isActive': true,
@@ -64,29 +74,7 @@ class UserService {
   }
 
   // Test method to create a sample user
-  Future<void> testCreateUser() async {
-    try {
-      await createUserDoc(
-        'test_user_${DateTime.now().millisecondsSinceEpoch}',
-        'test@example.com',
-        'Citizen',
-      );
-      print('✅ Test user created successfully');
-    } catch (e) {
-      print('❌ Error creating test user: $e');
-    }
-  }
+  
 
-  // Test method to fetch and print all users
-  Future<void> testGetAllUsers() async {
-    try {
-      final users = await getAllUsers();
-      print('📋 All Users:');
-      for (var user in users) {
-        print('User: ${user['email']} - Role: ${user['role']}');
-      }
-    } catch (e) {
-      print('❌ Error fetching users: $e');
-    }
-  }
+  
 }

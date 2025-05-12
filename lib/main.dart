@@ -10,7 +10,10 @@ Future<void> main() async {
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
-    );
+    );final app = Firebase.app();
+debugPrint('· App name: ${app.name}');
+debugPrint('· API key: ${app.options.apiKey}');
+debugPrint('· Project ID: ${app.options.projectId}');
     debugPrint('✅ Firebase initialized');
   } catch (e) {
     debugPrint('❌ Firebase failed to initialize: $e');
