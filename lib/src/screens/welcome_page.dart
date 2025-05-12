@@ -3,7 +3,7 @@ import 'login_screen.dart';
 import 'signup_screen.dart';
 
 class WelcomePage extends StatelessWidget {
-  static const routeName = '/';
+  static const routeName = '/welcome';
   const WelcomePage({super.key});
 
   @override

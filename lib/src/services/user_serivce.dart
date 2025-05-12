@@ -33,10 +33,21 @@ class UserService {
   Future<String> fetchUserRole(String uid) async {
     try {
       final doc = await _fs.doc(uid).get();
-      return doc.data()?['role'] as String;
+      return doc.data()?['role'] ?? 'Unknown';
     } catch (e) {
-      print('❌ Error fetching user role: $e');
-      rethrow;
+      print('Error fetching user role: $e');
+      return 'Unknown';
+    }
+  }
+
+  // Get user first name
+  Future<String> fetchUserFirstName(String uid) async {
+    try {
+      final doc = await _fs.doc(uid).get();
+      return doc.data()?['firstName'] ?? 'User';
+    } catch (e) {
+      print('Error fetching user first name: $e');
+      return 'User';
     }
   }
 

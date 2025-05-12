@@ -17,26 +17,70 @@ class AuthWrapper extends StatelessWidget {
     return StreamBuilder<User?>(
       stream: AuthService().authStateChanges,
       builder: (context, authSnapshot) {
-        // Still waiting on authentication state
-        if (authSnapshot.connectionState != ConnectionState.active) {
+        // Handle connection errors
+        if (authSnapshot.hasError) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Navigator.pushReplacementNamed(context, '/welcome');
+          });
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        // Still waiting on authentication state
+        if (authSnapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            backgroundColor: Colors.black,
+            body: Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            ),
           );
         }
 
         final user = authSnapshot.data;
         // Not signed in
         if (user == null) {
-          return const WelcomePage();
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Navigator.pushReplacementNamed(context, '/welcome');
+          });
+          return const Scaffold(
+            backgroundColor: Colors.black,
+            body: Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            ),
+          );
         }
 
         // Signed in → fetch role from Firestore
         return FutureBuilder<String>(
           future: UserService().fetchUserRole(user.uid),
           builder: (context, roleSnapshot) {
+            if (roleSnapshot.hasError) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                Navigator.pushReplacementNamed(context, '/welcome');
+              });
+              return const Scaffold(
+                backgroundColor: Colors.black,
+                body: Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+              );
+            }
+
             if (roleSnapshot.connectionState != ConnectionState.done) {
               return const Scaffold(
-                body: Center(child: CircularProgressIndicator()),
+                backgroundColor: Colors.black,
+                body: Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
               );
             }
 
@@ -49,8 +93,16 @@ class AuthWrapper extends StatelessWidget {
               case 'Advertiser':
                 return const HomeAdvertiser();
               default:
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  Navigator.pushReplacementNamed(context, '/welcome');
+                });
                 return const Scaffold(
-                  body: Center(child: Text('Unknown role')),
+                  backgroundColor: Colors.black,
+                  body: Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  ),
                 );
             }
           },

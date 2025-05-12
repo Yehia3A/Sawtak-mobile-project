@@ -16,13 +16,45 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Sawtak',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark(),
-      routes: {
-        '/': (context) => const AuthWrapper(),
-        WelcomePage.routeName: (_) => const WelcomePage(),
-        LoginScreen.routeName: (_) => const LoginScreen(),
-        SignUpScreen.routeName: (_) => const SignUpScreen(),
-  
+      theme: ThemeData(
+        platform: TargetPlatform.android,
+        useMaterial3: true,
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          },
+        ),
+      ),
+      initialRoute: '/',
+      onGenerateRoute: (settings) {
+        switch (settings.name) {
+          case '/':
+            return MaterialPageRoute(
+              builder: (_) => const AuthWrapper(),
+              settings: settings,
+            );
+          case '/welcome':
+            return MaterialPageRoute(
+              builder: (_) => const WelcomePage(),
+              settings: settings,
+            );
+          case '/login':
+            return MaterialPageRoute(
+              builder: (_) => const LoginScreen(),
+              settings: settings,
+            );
+          case '/signup':
+            return MaterialPageRoute(
+              builder: (_) => const SignUpScreen(),
+              settings: settings,
+            );
+          default:
+            return MaterialPageRoute(
+              builder: (_) => const AuthWrapper(),
+              settings: settings,
+            );
+        }
       },
     );
   }
