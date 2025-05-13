@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../services/auth_service.dart';
+import '../services/auth.service.dart';
 
 class LoginScreen extends StatefulWidget {
   static const routeName = '/login';
@@ -39,10 +39,9 @@ class _LoginScreenState extends State<LoginScreen>
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.3),
       end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _aniController,
-      curve: Curves.easeOutCubic,
-    ));
+    ).animate(
+      CurvedAnimation(parent: _aniController, curve: Curves.easeOutCubic),
+    );
 
     _aniController.forward();
   }
@@ -105,11 +104,8 @@ class _LoginScreenState extends State<LoginScreen>
         fit: StackFit.expand,
         children: [
           // Background Image
-          Image.asset(
-            'assets/signin.jpg',
-            fit: BoxFit.cover,
-          ),
-          
+          Image.asset('assets/signin.jpg', fit: BoxFit.cover),
+
           // Content
           SafeArea(
             child: SingleChildScrollView(
@@ -141,10 +137,7 @@ class _LoginScreenState extends State<LoginScreen>
                         opacity: _fadeAnimation,
                         child: const Text(
                           'Sign in to continue',
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 18,
-                          ),
+                          style: TextStyle(color: Colors.white70, fontSize: 18),
                         ),
                       ),
                     ),
@@ -178,9 +171,7 @@ class _LoginScreenState extends State<LoginScreen>
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.1),
             borderRadius: BorderRadius.circular(30),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.2),
-            ),
+            border: Border.all(color: Colors.white.withOpacity(0.2)),
           ),
           child: _buildForm(),
         ),
@@ -220,9 +211,11 @@ class _LoginScreenState extends State<LoginScreen>
                     : Icons.visibility_off_outlined,
                 color: Colors.white70,
               ),
-              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+              onPressed:
+                  () => setState(() => _obscurePassword = !_obscurePassword),
             ),
-            validator: (v) => (v == null || v.isEmpty) ? 'Enter your password' : null,
+            validator:
+                (v) => (v == null || v.isEmpty) ? 'Enter your password' : null,
           ),
           const SizedBox(height: 8),
 
@@ -231,15 +224,10 @@ class _LoginScreenState extends State<LoginScreen>
             alignment: Alignment.centerRight,
             child: TextButton(
               onPressed: () {},
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.white,
-              ),
+              style: TextButton.styleFrom(foregroundColor: Colors.white),
               child: const Text(
                 'Forgot Password?',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
               ),
             ),
           ),
@@ -261,22 +249,23 @@ class _LoginScreenState extends State<LoginScreen>
               ),
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 300),
-                child: _loading
-                    ? const SizedBox(
-                        height: 24,
-                        width: 24,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
+                child:
+                    _loading
+                        ? const SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                        : const Text(
+                          'Sign In',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      )
-                    : const Text(
-                        'Sign In',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
               ),
             ),
           ),
@@ -286,10 +275,7 @@ class _LoginScreenState extends State<LoginScreen>
           const Text(
             'Or continue with',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 14,
-            ),
+            style: TextStyle(color: Colors.white70, fontSize: 14),
           ),
           const SizedBox(height: 24),
 
@@ -315,18 +301,23 @@ class _LoginScreenState extends State<LoginScreen>
           // Sign Up Link
           Center(
             child: GestureDetector(
-              onTap: _loading ? null : () {
-                try {
-                  Navigator.pushNamed(context, '/signup');
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Unable to navigate to sign up. Please try again.'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              },
+              onTap:
+                  _loading
+                      ? null
+                      : () {
+                        try {
+                          Navigator.pushNamed(context, '/signup');
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Unable to navigate to sign up. Please try again.',
+                              ),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      },
               child: RichText(
                 text: const TextSpan(
                   text: "Don't have an account? ",
@@ -361,10 +352,7 @@ class _LoginScreenState extends State<LoginScreen>
   }) {
     return TextFormField(
       controller: controller,
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 16,
-      ),
+      style: const TextStyle(color: Colors.white, fontSize: 16),
       keyboardType: keyboardType,
       obscureText: obscureText,
       validator: validator,
@@ -374,9 +362,10 @@ class _LoginScreenState extends State<LoginScreen>
           color: Colors.white.withOpacity(0.7),
           fontSize: 16,
         ),
-        prefixIcon: prefix != null
-            ? Icon(prefix, color: Colors.white70, size: 22)
-            : null,
+        prefixIcon:
+            prefix != null
+                ? Icon(prefix, color: Colors.white70, size: 22)
+                : null,
         suffixIcon: suffix,
         filled: true,
         fillColor: Colors.black.withOpacity(0.25),
@@ -386,22 +375,15 @@ class _LoginScreenState extends State<LoginScreen>
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
-          borderSide: BorderSide(
-            color: Colors.white.withOpacity(0.2),
-          ),
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
-          borderSide: BorderSide(
-            color: Colors.white.withOpacity(0.2),
-          ),
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
-          borderSide: const BorderSide(
-            color: Colors.white,
-            width: 1,
-          ),
+          borderSide: const BorderSide(color: Colors.white, width: 1),
         ),
       ),
     );
@@ -421,15 +403,9 @@ class _LoginScreenState extends State<LoginScreen>
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.1),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.2),
-          ),
+          border: Border.all(color: Colors.white.withOpacity(0.2)),
         ),
-        child: Icon(
-          icon,
-          color: color,
-          size: 30,
-        ),
+        child: Icon(icon, color: color, size: 30),
       ),
     );
   }

@@ -1,7 +1,7 @@
 // lib/src/screens/home_government.dart
 
 import 'package:flutter/material.dart';
-import '../services/auth_service.dart';
+import '../services/auth.service.dart';
 
 class HomeGovernment extends StatelessWidget {
   const HomeGovernment({super.key});
@@ -20,9 +20,7 @@ class HomeGovernment extends StatelessWidget {
           ),
           // Dark overlay for better text visibility
           Container(
-            decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.5),
-            ),
+            decoration: BoxDecoration(color: Colors.black.withOpacity(0.5)),
           ),
           // Content
           SafeArea(
@@ -155,10 +153,7 @@ class HomeGovernment extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 title,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[700],
-                ),
+                style: TextStyle(fontSize: 14, color: Colors.grey[700]),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -183,19 +178,12 @@ class HomeGovernment extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              size: 40,
-              color: Theme.of(context).primaryColor,
-            ),
+            Icon(icon, size: 40, color: Theme.of(context).primaryColor),
             const SizedBox(height: 8),
             Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ],
         ),

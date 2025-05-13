@@ -6,7 +6,7 @@ import 'src/screens/auth_wrapper.dart';
 import 'src/screens/welcome_page.dart';
 import 'src/screens/login_screen.dart';
 import 'src/screens/signup_screen.dart';
-
+import 'src/widgets/floating_top_bar.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -26,6 +26,11 @@ class MyApp extends StatelessWidget {
           },
         ),
       ),
+      builder: (context, child) {
+        return Stack(
+          children: [child ?? const SizedBox.shrink(), const FloatingTopBar()],
+        );
+      },
       initialRoute: '/',
       onGenerateRoute: (settings) {
         switch (settings.name) {
