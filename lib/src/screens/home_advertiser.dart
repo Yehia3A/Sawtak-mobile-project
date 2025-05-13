@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../services/auth.service.dart';
 
 class HomeAdvertiser extends StatelessWidget {
   const HomeAdvertiser({super.key});

@@ -4,8 +4,7 @@ class FloatingTopBar extends StatelessWidget {
   final String userName;
   final VoidCallback? onNotifications;
 
-  const FloatingTopBar({Key? key, this.userName = '', this.onNotifications})
-    : super(key: key);
+  const FloatingTopBar({super.key, this.userName = '', this.onNotifications});
 
   @override
   Widget build(BuildContext context) {
