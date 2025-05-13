@@ -2,9 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../services/auth_service.dart';
-import '../services/user_serivce.dart';
-import 'welcome_page.dart';
+import '../services/auth.service.dart';
+import '../services/user.serivce.dart';
 import 'home_citizen.dart';
 import 'home_gov.dart';
 import 'home_advertiser.dart';
