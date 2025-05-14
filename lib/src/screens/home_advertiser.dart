@@ -199,28 +199,6 @@ class HomeAdvertiser extends StatelessWidget {
           ),
         ],
       ),
-
-      // 10) Bottom nav
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFFB8860B),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: const [
-            _NavItem(icon: Icons.home, label: 'Home', selected: false),
-            _NavItem(icon: Icons.campaign, label: 'Your Ads', selected: true),
-            _NavItem(
-              icon: Icons.bar_chart,
-              label: 'Analytics',
-              selected: false,
-            ),
-            _NavItem(icon: Icons.person, label: 'Profile', selected: false),
-          ],
-        ),
-      ),
     );
   }
 

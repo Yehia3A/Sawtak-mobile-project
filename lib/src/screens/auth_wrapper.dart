@@ -7,6 +7,7 @@ import '../services/user.serivce.dart';
 import 'home_citizen.dart';
 import 'home_gov.dart';
 import 'home_advertiser.dart';
+import 'mainLayout.dart';
 
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});
@@ -86,11 +87,26 @@ class AuthWrapper extends StatelessWidget {
             final role = roleSnapshot.data;
             switch (role) {
               case 'Citizen':
-                return const HomeCitizen();
+                return MainLayout(
+                  pages: [const HomeCitizen()],
+                  navItems: const [],
+                  isLoggedIn: true,
+                  role: role ?? 'Citizen',
+                );
               case 'Gov Admin':
-                return const HomeGovernment();
+                return MainLayout(
+                  pages: [const HomeGovernment()],
+                  navItems: const [],
+                  isLoggedIn: true,
+                  role: role ?? 'Gov Admin',
+                );
               case 'Advertiser':
-                return const HomeAdvertiser();
+                return MainLayout(
+                  pages: [const HomeAdvertiser()],
+                  navItems: const [],
+                  isLoggedIn: true,
+                  role: role ?? 'Advertiser',
+                );
               default:
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   Navigator.pushReplacementNamed(context, '/welcome');

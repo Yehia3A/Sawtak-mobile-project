@@ -4,55 +4,120 @@ import 'package:flutter_svg/flutter_svg.dart';
 class CustomBottomNavBar extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
+  final String role; // 'Citizen', 'Gov Admin', 'Advertiser'
 
   const CustomBottomNavBar({
     super.key,
     required this.currentIndex,
     required this.onTap,
+    required this.role,
   });
+
+  List<_NavBarButton> _buildButtons() {
+    switch (role) {
+      case 'Gov Admin':
+        return [
+          _NavBarButton(
+            assetPath: 'assets/homeButton.svg',
+            label: 'Home',
+            selected: currentIndex == 0,
+            onTap: () => onTap(0),
+          ),
+          _NavBarButton(
+            assetPath: 'assets/EyeButton.svg',
+            label: 'Check Reports',
+            selected: currentIndex == 1,
+            onTap: () => onTap(1),
+          ),
+          _NavBarButton(
+            assetPath: 'assets/massageButton.svg',
+            label: 'Citizens Messages',
+            selected: currentIndex == 2,
+            onTap: () => onTap(2),
+          ),
+          _NavBarButton(
+            assetPath: 'assets/profileButton.svg',
+            label: 'User Management',
+            selected: currentIndex == 3,
+            onTap: () => onTap(3),
+          ),
+        ];
+      case 'Advertiser':
+        return [
+          _NavBarButton(
+            assetPath: 'assets/homeButton.svg',
+            label: 'Home',
+            selected: currentIndex == 0,
+            onTap: () => onTap(0),
+          ),
+          _NavBarButton(
+            assetPath: 'assets/EyeButton.svg',
+            label: 'Check your Ads',
+            selected: currentIndex == 1,
+            onTap: () => onTap(1),
+          ),
+          _NavBarButton(
+            assetPath: 'assets/massageButton.svg',
+            label: 'Views Analytic',
+            selected: currentIndex == 2,
+            onTap: () => onTap(2),
+          ),
+          _NavBarButton(
+            assetPath: 'assets/profileButton.svg',
+            label: 'Profile',
+            selected: currentIndex == 3,
+            onTap: () => onTap(3),
+          ),
+        ];
+      case 'Citizen':
+      default:
+        return [
+          _NavBarButton(
+            assetPath: 'assets/homeButton.svg',
+            label: 'Home',
+            selected: currentIndex == 0,
+            onTap: () => onTap(0),
+          ),
+          _NavBarButton(
+            assetPath: 'assets/EyeButton.svg',
+            label: 'Report a Problem',
+            selected: currentIndex == 1,
+            onTap: () => onTap(1),
+          ),
+          _NavBarButton(
+            assetPath: 'assets/massageButton.svg',
+            label: 'Massage the Government',
+            selected: currentIndex == 2,
+            onTap: () => onTap(2),
+          ),
+          _NavBarButton(
+            assetPath: 'assets/profileButton.svg',
+            label: 'Profile',
+            selected: currentIndex == 3,
+            onTap: () => onTap(3),
+          ),
+        ];
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        // Curved, gradient background
-        Positioned.fill(
-          child: CustomPaint(painter: _NavBarBackgroundPainter()),
-        ),
-        // Navigation buttons
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _NavBarButton(
-                assetPath: 'assets/homeButton.svg',
-                label: 'Home',
-                selected: currentIndex == 0,
-                onTap: () => onTap(0),
-              ),
-              _NavBarButton(
-                assetPath: 'assets/EyeButton.svg',
-                label: 'Announcements',
-                selected: currentIndex == 1,
-                onTap: () => onTap(1),
-              ),
-              _NavBarButton(
-                assetPath: 'assets/massageButton.svg',
-                label: 'Citizens Messages',
-                selected: currentIndex == 2,
-                onTap: () => onTap(2),
-              ),
-              _NavBarButton(
-                assetPath: 'assets/profileButton.svg',
-                label: 'Profile',
-                selected: currentIndex == 3,
-                onTap: () => onTap(3),
-              ),
-            ],
+    return SizedBox(
+      height: 100,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: CustomPaint(painter: _NavBarBackgroundPainter()),
           ),
-        ),
-      ],
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: _buildButtons(),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -102,6 +167,7 @@ class _NavBarButton extends StatelessWidget {
               color: labelColor,
               fontWeight: selected ? FontWeight.bold : FontWeight.normal,
               fontSize: 13,
+              decoration: TextDecoration.none,
             ),
           ),
         ],
@@ -115,17 +181,17 @@ class _NavBarBackgroundPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint =
         Paint()
-          ..shader = LinearGradient(
-            colors: [const Color(0xFF2D1400), const Color(0xFFFFC107)],
+          ..shader = const LinearGradient(
+            colors: [Color(0xFF2D1400), Color(0xFFFFC107)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
 
     final path = Path();
-    path.moveTo(0, 20);
+    path.moveTo(0, 30);
     path.quadraticBezierTo(size.width * 0.05, 0, size.width * 0.18, 0);
     path.lineTo(size.width * 0.82, 0);
-    path.quadraticBezierTo(size.width * 0.95, 0, size.width, 20);
+    path.quadraticBezierTo(size.width * 0.95, 0, size.width, 30);
     path.lineTo(size.width, size.height);
     path.lineTo(0, size.height);
     path.close();

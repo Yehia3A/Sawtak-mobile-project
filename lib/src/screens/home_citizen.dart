@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/user.serivce.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../widgets/custom_bottom_nav_bar.dart';
 
 class HomeCitizen extends StatelessWidget {
   const HomeCitizen({super.key});
@@ -70,62 +69,7 @@ class HomeCitizen extends StatelessWidget {
             child: Column(
               children: [
                 // Modern top bar with gradient and rounded corners
-                Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF2D1400), Color(0xFFFFC107)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(24),
-                      bottomRight: Radius.circular(24),
-                    ),
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 18,
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      IconButton(
-                        icon: const Icon(
-                          Icons.notifications_none,
-                          color: Colors.white,
-                          size: 28,
-                        ),
-                        onPressed: () {},
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: FutureBuilder<String>(
-                          future: UserService().fetchUserFirstName(
-                            user?.uid ?? '',
-                          ),
-                          builder: (context, snapshot) {
-                            String welcomeText = 'Welcome';
-                            if (snapshot.connectionState ==
-                                    ConnectionState.done &&
-                                snapshot.hasData) {
-                              welcomeText = 'Welcome, ${snapshot.data}';
-                            }
-                            return Text(
-                              welcomeText,
-                              textAlign: TextAlign.right,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 0.5,
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+
                 // Search-style prompt box
                 Padding(
                   padding: const EdgeInsets.symmetric(
@@ -230,18 +174,8 @@ class HomeCitizen extends StatelessWidget {
               ],
             ),
           ),
+
           // Floating navbar
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: CustomBottomNavBar(
-              currentIndex: 0, // Home selected
-              onTap: (index) {
-                // TODO: Implement navigation logic for each tab
-              },
-            ),
-          ),
         ],
       ),
     );
