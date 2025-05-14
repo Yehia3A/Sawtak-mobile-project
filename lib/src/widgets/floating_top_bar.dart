@@ -16,7 +16,11 @@ class FloatingTopBar extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.85),
+              gradient: const LinearGradient(
+                colors: [Color(0xFF2D1400), Color(0xFFFFC107)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: Colors.white24, width: 1.5),
               boxShadow: [
