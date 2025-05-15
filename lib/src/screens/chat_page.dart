@@ -58,8 +58,11 @@ class _ChatPageState extends State<ChatPage> {
           IconButton(
             icon: const Icon(Icons.exit_to_app),
             onPressed: () async {
-              await _chatService.endChat(_chat!.id);
-              Navigator.pop(context);
+              final confirm = await showEndChatDialog(context);
+              if (confirm) {
+                await _chatService.endChat(_chat!.id);
+                Navigator.pop(context);
+              }
             },
           )
         ],
@@ -220,8 +223,11 @@ class _ChatPageAssignedState extends State<ChatPageAssigned> {
           IconButton(
             icon: const Icon(Icons.exit_to_app),
             onPressed: () async {
-              await _chatService.endChat(widget.chatId);
-              Navigator.pop(context);
+              final confirm = await showEndChatDialog(context);
+              if (confirm) {
+                await _chatService.endChat(widget.chatId);
+                Navigator.pop(context);
+              }
             },
           ),
         ],
@@ -281,4 +287,23 @@ class _ChatPageAssignedState extends State<ChatPageAssigned> {
       ),
     );
   }
+}
+
+Future<bool> showEndChatDialog(BuildContext context) async {
+  return await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text('End this chat?'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context, true),
+          child: Text('End'),
+        ),
+      ],
+    ),
+  ) ?? false;
 }
