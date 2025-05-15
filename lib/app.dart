@@ -1,6 +1,7 @@
 // lib/src/app.dart
 
 import 'package:flutter/material.dart';
+import 'package:gov_citizen_app/src/screens/chat_page.dart';
 
 import 'src/screens/auth_wrapper.dart';
 import 'src/screens/welcome_page.dart';
@@ -47,6 +48,11 @@ class MyApp extends StatelessWidget {
           case '/signup':
             return MaterialPageRoute(
               builder: (_) => const SignUpScreen(),
+              settings: settings,
+            );
+          case '/chat':
+            return MaterialPageRoute(
+              builder: (_) => const ChatPage(),
               settings: settings,
             );
           default:

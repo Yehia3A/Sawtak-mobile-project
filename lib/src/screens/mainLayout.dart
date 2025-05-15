@@ -40,44 +40,51 @@ class _MainLayoutState extends State<MainLayout> {
         top: false,
         bottom: false,
         child: Stack(
-          children: [
-            // Main content
-            Positioned.fill(child: widget.pages[_currentIndex]),
+  children: [
+    Positioned.fill(child: widget.pages[_currentIndex]),
 
-            // Floating top bar with username
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: FutureBuilder<String>(
-                future:
-                    user != null
-                        ? UserService().fetchUserFirstName(user.uid)
-                        : Future.value(''),
-                builder: (context, snapshot) {
-                  final name =
-                      (snapshot.connectionState == ConnectionState.done &&
-                              snapshot.hasData)
-                          ? snapshot.data!
-                          : '';
-                  return FloatingTopBar(userName: name);
-                },
-              ),
-            ),
+    Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      child: FutureBuilder<String>(
+        future: user != null
+            ? UserService().fetchUserFirstName(user.uid)
+            : Future.value(''),
+        builder: (context, snapshot) {
+          final name = (snapshot.connectionState == ConnectionState.done &&
+                  snapshot.hasData)
+              ? snapshot.data!
+              : '';
+          return FloatingTopBar(userName: name);
+        },
+      ),
+    ),
 
-            // Bottom navigation bar
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: CustomBottomNavBar(
-                currentIndex: _currentIndex,
-                onTap: _onTabTapped,
-                role: widget.role,
-              ),
-            ),
-          ],
-        ),
+    Positioned(
+      left: 0,
+      right: 0,
+      bottom: 0,
+      child: CustomBottomNavBar(
+        currentIndex: _currentIndex,
+        onTap: _onTabTapped,
+        role: widget.role,
+      ),
+    ),
+
+    // ✅ Always show the chat button
+    Positioned(
+      right: 16,
+      bottom: 110,
+      child: FloatingActionButton(
+        heroTag: 'main-chat-fab',
+        onPressed: () => Navigator.pushNamed(context, '/chat'),
+        backgroundColor: Colors.amber,
+        child: const Icon(Icons.chat),
+      ),
+    ),
+  ],
+),
       ),
     );
   }

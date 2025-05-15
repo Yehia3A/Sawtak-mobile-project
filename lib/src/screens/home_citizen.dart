@@ -178,6 +178,11 @@ class HomeCitizen extends StatelessWidget {
           // Floating navbar
         ],
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => Navigator.pushNamed(context, '/chat'),
+        child: Icon(Icons.chat),
+        backgroundColor: Colors.amber,
+      ),
     );
   }
 }

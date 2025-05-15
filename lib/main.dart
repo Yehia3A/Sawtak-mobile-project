@@ -79,6 +79,7 @@ class ErrorBoundary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false, // 👈 remove DEBUG banner
       builder: (context, widget) {
         Widget error = const Text('Something went wrong!');
         if (widget is Scaffold || widget is Navigator) {
