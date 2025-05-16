@@ -149,7 +149,7 @@ class _ChatPageState extends State<ChatPage> {
           return ListView(
             children: [
               ListTile(
-                title: Text('${chat.role} | ${chat.userId.substring(0, 6)}'),
+                title: Text(chat.role),
                 subtitle: const Text('Assigned to you'),
                 trailing: const Icon(Icons.chat),
                 onTap: () {
@@ -178,7 +178,7 @@ class _ChatPageState extends State<ChatPage> {
                 itemBuilder: (context, index) {
                   final chat = unassignedChats[index];
                   return ListTile(
-                    title: Text('${chat.role} | ${chat.userId.substring(0, 6)}'),
+                    title: Text(chat.role),
                     subtitle: const Text('Tap to assign and respond'),
                     trailing: const Icon(Icons.chat_bubble_outline),
                     onTap: () async {
