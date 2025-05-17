@@ -262,7 +262,16 @@ class _ChatPageAssignedState extends State<ChatPageAssigned> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+      return Container(
+    decoration: const BoxDecoration(
+      image: DecorationImage(
+        image: AssetImage('assets/chat_bg.png'),
+        fit: BoxFit.cover,
+      ),
+    ),
+    child: Scaffold(
+      backgroundColor: Colors.transparent,
+
       appBar: AppBar(
         title: const Text('Chat'),
         actions: [
@@ -331,6 +340,7 @@ class _ChatPageAssignedState extends State<ChatPageAssigned> {
           ),
         ],
       ),
+    ),
     );
   }
 }
