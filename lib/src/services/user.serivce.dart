@@ -1,7 +1,60 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserService {
-  final _fs = FirebaseFirestore.instance.collection('users');
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  // Get user role as a stream
+  Stream<String?> getUserRole(String uid) {
+    return _firestore
+        .collection('users')
+        .doc(uid)
+        .snapshots()
+        .map((doc) => doc.data()?['role'] as String?);
+  }
+
+  // Fetch user role
+  Future<String> fetchUserRole(String uid) async {
+    final doc = await _firestore.collection('users').doc(uid).get();
+    return doc.data()?['role'] ?? 'Citizen';
+  }
+
+  // Fetch user first name
+  Future<String> fetchUserFirstName(String uid) async {
+    final doc = await _firestore.collection('users').doc(uid).get();
+    return doc.data()?['firstName'] ?? '';
+  }
+
+  // Update user role
+  Future<void> updateUserRole(String uid, String role) async {
+    await _firestore.collection('users').doc(uid).update({'role': role});
+  }
+
+  // Create new user
+  Future<void> createUser({
+    required String uid,
+    required String email,
+    required String firstName,
+    required String lastName,
+    String role = 'Citizen',
+  }) async {
+    await _firestore.collection('users').doc(uid).set({
+      'email': email,
+      'firstName': firstName,
+      'lastName': lastName,
+      'role': role,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  // Get all users
+  Stream<QuerySnapshot> getAllUsers() {
+    return _firestore.collection('users').snapshots();
+  }
+
+  // Delete user
+  Future<void> deleteUser(String uid) async {
+    await _firestore.collection('users').doc(uid).delete();
+  }
 
   // Create a new user document
   Future<void> createUserDoc(
@@ -13,7 +66,7 @@ class UserService {
     String password,
   ) async {
     try {
-      await _fs.doc(uid).set({
+      await _firestore.collection('users').doc(uid).set({
         'email': email,
         'firstName': firstName,
         'lastName': lastName,
@@ -29,43 +82,10 @@ class UserService {
     }
   }
 
-  // Get user role
-  Future<String> fetchUserRole(String uid) async {
-    try {
-      final doc = await _fs.doc(uid).get();
-      return doc.data()?['role'] ?? 'Unknown';
-    } catch (e) {
-      print('Error fetching user role: $e');
-      return 'Unknown';
-    }
-  }
-
-  // Get user first name
-  Future<String> fetchUserFirstName(String uid) async {
-    try {
-      final doc = await _fs.doc(uid).get();
-      return doc.data()?['firstName'] ?? 'User';
-    } catch (e) {
-      print('Error fetching user first name: $e');
-      return 'User';
-    }
-  }
-
-  // Get all users
-  Future<List<Map<String, dynamic>>> getAllUsers() async {
-    try {
-      final snapshot = await _fs.get();
-      return snapshot.docs.map((doc) => doc.data()).toList();
-    } catch (e) {
-      print('❌ Error fetching all users: $e');
-      rethrow;
-    }
-  }
-
   // Update user data
   Future<void> updateUser(String uid, Map<String, dynamic> data) async {
     try {
-      await _fs.doc(uid).update(data);
+      await _firestore.collection('users').doc(uid).update(data);
       print('✅ User updated successfully');
     } catch (e) {
       print('❌ Error updating user: $e');
@@ -73,19 +93,5 @@ class UserService {
     }
   }
 
-  // Delete user
-  Future<void> deleteUser(String uid) async {
-    try {
-      await _fs.doc(uid).delete();
-      print('✅ User deleted successfully');
-    } catch (e) {
-      print('❌ Error deleting user: $e');
-      rethrow;
-    }
-  }
-
   // Test method to create a sample user
-  
-
-  
 }

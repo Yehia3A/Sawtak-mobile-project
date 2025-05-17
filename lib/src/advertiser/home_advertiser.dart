@@ -1,13 +1,78 @@
 import 'package:flutter/material.dart';
+import '../models/advertisement_request.dart';
+import '../services/advertisement_service.dart';
+import '../services/auth_service.dart';
+import 'package:uuid/uuid.dart';
 
-class HomeAdvertiser extends StatelessWidget {
+class HomeAdvertiser extends StatefulWidget {
   const HomeAdvertiser({super.key});
+
+  @override
+  State<HomeAdvertiser> createState() => _HomeAdvertiserState();
+}
+
+class _HomeAdvertiserState extends State<HomeAdvertiser> {
+  final _formKey = GlobalKey<FormState>();
+  final _titleController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _imageUrlController = TextEditingController();
+  final _cityController = TextEditingController();
+  final _areaController = TextEditingController();
+  final _linkController = TextEditingController();
+
+  final _adService = AdvertisementService();
+  final _authService = AuthService();
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descriptionController.dispose();
+    _imageUrlController.dispose();
+    _cityController.dispose();
+    _areaController.dispose();
+    _linkController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submitForm() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final request = AdvertisementRequest(
+      id: const Uuid().v4(),
+      posterId: _authService.currentUser?.uid ?? '',
+      posterName: _authService.currentUser?.displayName ?? 'Unknown',
+      title: _titleController.text,
+      description: _descriptionController.text,
+      imageUrl: _imageUrlController.text,
+      city: _cityController.text,
+      area: _areaController.text,
+      link: _linkController.text,
+      createdAt: DateTime.now(),
+    );
+
+    try {
+      await _adService.createRequest(request);
+      _formKey.currentState!.reset();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Advertisement request submitted successfully'),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
-      // 1) Background
       body: Stack(
         children: [
           Image.asset(
@@ -19,200 +84,193 @@ class HomeAdvertiser extends StatelessWidget {
           Container(color: Colors.black.withOpacity(0.4)),
 
           SafeArea(
-            child: Column(
-              children: [
-                // 2) Gold header
-                Container(
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFB8860B),
-                    borderRadius: BorderRadius.vertical(
-                      bottom: Radius.circular(24),
-                    ),
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  child: Row(
-                    children: const [
-                      Icon(Icons.notifications, color: Colors.white),
-                      Spacer(),
-                      Text(
-                        'Sawtak',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
+            child: SingleChildScrollView(
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    // Prompt box
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
                         ),
-                      ),
-                      Spacer(),
-                      Text(
-                        'Welcome, Yehia',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // 3) Prompt box
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.white70),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Text(
-                      'Create Advertisements posts for your Shop to people 1 step close to you!',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ),
-
-                // 4) Section title
-                const Text(
-                  'Create Advertisement Post',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // 5) Upload area
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Container(
-                    height: 120,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.white70, width: 1.5),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: InkWell(
-                      onTap: () {},
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          Icon(Icons.image, color: Colors.white70, size: 40),
-                          SizedBox(height: 8),
-                          Text(
-                            'Upload Photo/Video',
-                            style: TextStyle(color: Colors.white70),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // 6) Title field
-                _buildInputField('Title *', false),
-
-                const SizedBox(height: 16),
-                // 7) Description field
-                _buildInputField('Description *', true, maxLines: 4),
-                const SizedBox(height: 16),
-
-                // 8) Location field with Change button
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: TextFormField(
-                    style: const TextStyle(color: Colors.black),
-                    decoration: InputDecoration(
-                      hintText: 'Location (optional)',
-                      hintStyle: const TextStyle(color: Colors.black54),
-                      filled: true,
-                      fillColor: Colors.white70,
-                      contentPadding: const EdgeInsets.symmetric(
-                        vertical: 16,
-                        horizontal: 20,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(30),
-                        borderSide: BorderSide.none,
-                      ),
-                      suffixIcon: TextButton(
-                        onPressed: () {},
-                        style: TextButton.styleFrom(
-                          padding: EdgeInsets.zero,
-                          minimumSize: const Size(50, 30),
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.white70),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Text(
-                          'Change',
-                          style: TextStyle(color: Colors.red),
+                          'Create Advertisements posts for your Shop to people 1 step close to you!',
+                          style: TextStyle(color: Colors.white),
                         ),
                       ),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 24),
 
-                // 9) Post button
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
+                    // Section title
+                    const Text(
+                      'Create Advertisement Post',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
-                      child: Ink(
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF2196F3), Color(0xFF0D47A1)],
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Image URL field
+                    _buildInputField(
+                      'Image URL *',
+                      _imageUrlController,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter an image URL';
+                        }
+                        final uri = Uri.tryParse(value);
+                        if (uri == null || !uri.isAbsolute) {
+                          return 'Please enter a valid URL';
+                        }
+                        return null;
+                      },
+                    ),
+
+                    const SizedBox(height: 16),
+                    // Title field
+                    _buildInputField(
+                      'Title *',
+                      _titleController,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter a title';
+                        }
+                        return null;
+                      },
+                    ),
+
+                    const SizedBox(height: 16),
+                    // Description field
+                    _buildInputField(
+                      'Description *',
+                      _descriptionController,
+                      maxLines: 4,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter a description';
+                        }
+                        return null;
+                      },
+                    ),
+
+                    const SizedBox(height: 16),
+                    // City field
+                    _buildInputField(
+                      'City *',
+                      _cityController,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter a city';
+                        }
+                        return null;
+                      },
+                    ),
+
+                    const SizedBox(height: 16),
+                    // Area field
+                    _buildInputField(
+                      'Area *',
+                      _areaController,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter an area';
+                        }
+                        return null;
+                      },
+                    ),
+
+                    const SizedBox(height: 16),
+                    // Link field
+                    _buildInputField(
+                      'Link (Facebook, Menu, etc.)',
+                      _linkController,
+                      validator: (value) {
+                        if (value != null && value.isNotEmpty) {
+                          final uri = Uri.tryParse(value);
+                          if (uri == null || !uri.isAbsolute) {
+                            return 'Please enter a valid URL';
+                          }
+                        }
+                        return null;
+                      },
+                    ),
+
+                    const SizedBox(height: 24),
+                    // Post button
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: _submitForm,
+                          style: ElevatedButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
                           ),
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        child: const Center(
-                          child: Text(
-                            'Post',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
+                          child: Ink(
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF2196F3), Color(0xFF0D47A1)],
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                              ),
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                            child: const Center(
+                              child: Text(
+                                'Post',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 32),
+                  ],
                 ),
-
-                const Spacer(),
-              ],
+              ),
             ),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.pushNamed(context, '/chat'),
-        child: Icon(Icons.chat),
+        onPressed: () => Navigator.pushNamed(context, '/check_ads'),
+        child: const Icon(Icons.list),
         backgroundColor: Colors.amber,
       ),
     );
   }
 
-  Widget _buildInputField(String hint, bool isMulti, {int maxLines = 1}) {
+  Widget _buildInputField(
+    String hint,
+    TextEditingController controller, {
+    int maxLines = 1,
+    String? Function(String?)? validator,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: TextFormField(
-        maxLines: isMulti ? maxLines : 1,
+        controller: controller,
+        maxLines: maxLines,
         style: const TextStyle(color: Colors.black),
+        validator: validator,
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: const TextStyle(color: Colors.black54),
@@ -223,7 +281,7 @@ class HomeAdvertiser extends StatelessWidget {
             horizontal: 20,
           ),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(isMulti ? 12 : 30),
+            borderRadius: BorderRadius.circular(maxLines > 1 ? 12 : 30),
             borderSide: BorderSide.none,
           ),
         ),

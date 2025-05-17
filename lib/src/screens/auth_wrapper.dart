@@ -55,14 +55,11 @@ class AuthWrapper extends StatelessWidget {
           );
         }
 
-        // Signed in → fetch role from Firestore
-        return FutureBuilder<String>(
-          future: UserService().fetchUserRole(user.uid),
+        // Get user role
+        return StreamBuilder<String?>(
+          stream: UserService().getUserRole(user.uid),
           builder: (context, roleSnapshot) {
-            if (roleSnapshot.hasError) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                Navigator.pushReplacementNamed(context, '/welcome');
-              });
+            if (roleSnapshot.connectionState == ConnectionState.waiting) {
               return const Scaffold(
                 backgroundColor: Colors.black,
                 body: Center(
@@ -73,7 +70,10 @@ class AuthWrapper extends StatelessWidget {
               );
             }
 
-            if (roleSnapshot.connectionState != ConnectionState.done) {
+            if (roleSnapshot.hasError) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                Navigator.pushReplacementNamed(context, '/welcome');
+              });
               return const Scaffold(
                 backgroundColor: Colors.black,
                 body: Center(
