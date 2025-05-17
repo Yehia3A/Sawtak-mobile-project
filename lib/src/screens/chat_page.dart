@@ -35,6 +35,14 @@ class _ChatPageState extends State<ChatPage> {
 
     final chat = await _chatService.startOrGetChat(_role!);
     setState(() => _chat = chat);
+    if (_chat != null) {
+      _getChatStream(_chat!.id).listen((doc) {
+        final isEnded = doc['isEnded'] ?? false;
+        if (isEnded && mounted) {
+          _showChatEndedPopup(); // show dialog
+        }
+      });
+    }
   }
 
   @override
@@ -47,11 +55,24 @@ class _ChatPageState extends State<ChatPage> {
       return _buildAgentChatList();
     }
 
-    return _chat == null ? const CircularProgressIndicator() : _buildChatUI();
+if (_chat == null) {
+  return const Scaffold(
+    body: Center(child: CircularProgressIndicator()),
+  );
+}
+return _buildChatUI();
   }
 
   Widget _buildChatUI() {
-    return Scaffold(
+    return Container(
+  decoration: const BoxDecoration(
+    image: DecorationImage(
+      image: AssetImage('assets/chat_bg.png'), // Your image file
+      fit: BoxFit.cover,
+    ),
+  ),
+  child: Scaffold(
+    backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text('Chat'),
         actions: [
@@ -122,6 +143,7 @@ class _ChatPageState extends State<ChatPage> {
             ),
           ),
         ],
+      ),
       ),
     );
   }
@@ -200,6 +222,30 @@ class _ChatPageState extends State<ChatPage> {
     ),
   );
 }
+void _showChatEndedPopup() {
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) => AlertDialog(
+      title: Text('Chat Ended'),
+      content: Text('This chat has been ended by the admin.'),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pop(); // close dialog
+            Navigator.of(context).pushReplacementNamed('/home'); // adjust if needed
+          },
+          child: Text('OK'),
+        ),
+      ],
+    ),
+  );
+}
+
+Stream<DocumentSnapshot> _getChatStream(String chatId) {
+  return FirebaseFirestore.instance.collection('chats').doc(chatId).snapshots();
+}
+
 }
 
 class ChatPageAssigned extends StatefulWidget {
