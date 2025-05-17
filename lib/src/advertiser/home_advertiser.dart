@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/advertisement_request.dart';
 import '../services/advertisement_service.dart';
 import '../services/auth_service.dart';
+import '../data/egypt_locations.dart';
 import 'package:uuid/uuid.dart';
 
 class HomeAdvertiser extends StatefulWidget {
@@ -16,26 +17,56 @@ class _HomeAdvertiserState extends State<HomeAdvertiser> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _imageUrlController = TextEditingController();
-  final _cityController = TextEditingController();
-  final _areaController = TextEditingController();
   final _linkController = TextEditingController();
+
+  String? _selectedCity;
+  String? _selectedArea;
+  List<String> _availableAreas = [];
 
   final _adService = AdvertisementService();
   final _authService = AuthService();
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeLocations();
+  }
+
+  void _initializeLocations() {
+    if (_selectedCity != null) {
+      _availableAreas = getAreasForCity(_selectedCity!);
+    }
+  }
+
+  void _onCityChanged(String? newCity) {
+    setState(() {
+      _selectedCity = newCity;
+      _availableAreas = newCity != null ? getAreasForCity(newCity) : [];
+      _selectedArea = null; // Reset area when city changes
+    });
+  }
 
   @override
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
     _imageUrlController.dispose();
-    _cityController.dispose();
-    _areaController.dispose();
     _linkController.dispose();
     super.dispose();
   }
 
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
+
+    if (_selectedCity == null || _selectedArea == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select both city and area'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
     final request = AdvertisementRequest(
       id: const Uuid().v4(),
@@ -44,8 +75,8 @@ class _HomeAdvertiserState extends State<HomeAdvertiser> {
       title: _titleController.text,
       description: _descriptionController.text,
       imageUrl: _imageUrlController.text,
-      city: _cityController.text,
-      area: _areaController.text,
+      city: _selectedCity!,
+      area: _selectedArea!,
       link: _linkController.text,
       createdAt: DateTime.now(),
     );
@@ -53,6 +84,11 @@ class _HomeAdvertiserState extends State<HomeAdvertiser> {
     try {
       await _adService.createRequest(request);
       _formKey.currentState!.reset();
+      setState(() {
+        _selectedCity = null;
+        _selectedArea = null;
+        _availableAreas = [];
+      });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -164,29 +200,81 @@ class _HomeAdvertiserState extends State<HomeAdvertiser> {
                     ),
 
                     const SizedBox(height: 16),
-                    // City field
-                    _buildInputField(
-                      'City *',
-                      _cityController,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter a city';
-                        }
-                        return null;
-                      },
+                    // City Dropdown
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        decoration: BoxDecoration(
+                          color: Colors.white70,
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        child: DropdownButtonFormField<String>(
+                          value: _selectedCity,
+                          hint: const Text('Select City *'),
+                          isExpanded: true,
+                          items:
+                              getAllCities()
+                                  .map(
+                                    (city) => DropdownMenuItem(
+                                      value: city,
+                                      child: Text(city),
+                                    ),
+                                  )
+                                  .toList(),
+                          onChanged: _onCityChanged,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please select a city';
+                            }
+                            return null;
+                          },
+                          decoration: const InputDecoration(
+                            border: InputBorder.none,
+                          ),
+                        ),
+                      ),
                     ),
 
                     const SizedBox(height: 16),
-                    // Area field
-                    _buildInputField(
-                      'Area *',
-                      _areaController,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter an area';
-                        }
-                        return null;
-                      },
+                    // Area Dropdown
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        decoration: BoxDecoration(
+                          color: Colors.white70,
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        child: DropdownButtonFormField<String>(
+                          value: _selectedArea,
+                          hint: const Text('Select Area *'),
+                          isExpanded: true,
+                          items:
+                              _availableAreas
+                                  .map(
+                                    (area) => DropdownMenuItem(
+                                      value: area,
+                                      child: Text(area),
+                                    ),
+                                  )
+                                  .toList(),
+                          onChanged: (newValue) {
+                            setState(() {
+                              _selectedArea = newValue;
+                            });
+                          },
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please select an area';
+                            }
+                            return null;
+                          },
+                          decoration: const InputDecoration(
+                            border: InputBorder.none,
+                          ),
+                        ),
+                      ),
                     ),
 
                     const SizedBox(height: 16),

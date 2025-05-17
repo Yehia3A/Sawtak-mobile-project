@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/advertisement_request.dart';
 import '../services/advertisement_service.dart';
 import '../services/auth_service.dart';
+import '../data/egypt_locations.dart';
 
 class CheckAdsScreen extends StatelessWidget {
   final _adService = AdvertisementService();
@@ -19,7 +20,7 @@ class CheckAdsScreen extends StatelessWidget {
   }
 
   bool _isValidUrl(String? url) {
-    if (url == null || url.isEmpty) return true; // Empty is valid (no change)
+    if (url == null || url.isEmpty) return true;
     final uri = Uri.tryParse(url);
     return uri != null && uri.isAbsolute;
   }
@@ -29,14 +30,14 @@ class CheckAdsScreen extends StatelessWidget {
     AdvertisementRequest request,
   ) async {
     final formKey = GlobalKey<FormState>();
+    final titleController = TextEditingController();
+    final descriptionController = TextEditingController();
+    final imageUrlController = TextEditingController();
+    final linkController = TextEditingController();
 
-    // Move controllers to be class fields to better manage their lifecycle
-    late final titleController = TextEditingController();
-    late final descriptionController = TextEditingController();
-    late final imageUrlController = TextEditingController();
-    late final cityController = TextEditingController();
-    late final areaController = TextEditingController();
-    late final linkController = TextEditingController();
+    String? selectedCity = request.city;
+    String? selectedArea = request.area;
+    List<String> availableAreas = getAreasForCity(request.city);
 
     bool isUpdating = false;
 
@@ -49,12 +50,9 @@ class CheckAdsScreen extends StatelessWidget {
           builder: (context, setState) {
             return WillPopScope(
               onWillPop: () async {
-                // Clean up controllers before popping
                 titleController.dispose();
                 descriptionController.dispose();
                 imageUrlController.dispose();
-                cityController.dispose();
-                areaController.dispose();
                 linkController.dispose();
                 return true;
               },
@@ -108,20 +106,52 @@ class CheckAdsScreen extends StatelessWidget {
                           },
                         ),
                         const SizedBox(height: 8),
-                        TextFormField(
-                          controller: cityController,
-                          decoration: InputDecoration(
-                            labelText: 'City',
-                            hintText: request.city,
-                          ),
+                        // City Dropdown
+                        DropdownButtonFormField<String>(
+                          value: selectedCity,
+                          hint: const Text('Select City'),
+                          isExpanded: true,
+                          items:
+                              getAllCities()
+                                  .map(
+                                    (city) => DropdownMenuItem(
+                                      value: city,
+                                      child: Text(city),
+                                    ),
+                                  )
+                                  .toList(),
+                          onChanged: (newCity) {
+                            setState(() {
+                              selectedCity = newCity;
+                              availableAreas =
+                                  newCity != null
+                                      ? getAreasForCity(newCity)
+                                      : [];
+                              selectedArea =
+                                  null; // Reset area when city changes
+                            });
+                          },
                         ),
                         const SizedBox(height: 8),
-                        TextFormField(
-                          controller: areaController,
-                          decoration: InputDecoration(
-                            labelText: 'Area',
-                            hintText: request.area,
-                          ),
+                        // Area Dropdown
+                        DropdownButtonFormField<String>(
+                          value: selectedArea,
+                          hint: const Text('Select Area'),
+                          isExpanded: true,
+                          items:
+                              availableAreas
+                                  .map(
+                                    (area) => DropdownMenuItem(
+                                      value: area,
+                                      child: Text(area),
+                                    ),
+                                  )
+                                  .toList(),
+                          onChanged: (newArea) {
+                            setState(() {
+                              selectedArea = newArea;
+                            });
+                          },
                         ),
                         const SizedBox(height: 8),
                         TextFormField(
@@ -150,12 +180,9 @@ class CheckAdsScreen extends StatelessWidget {
                         isUpdating
                             ? null
                             : () {
-                              // Clean up controllers before popping
                               titleController.dispose();
                               descriptionController.dispose();
                               imageUrlController.dispose();
-                              cityController.dispose();
-                              areaController.dispose();
                               linkController.dispose();
                               Navigator.of(dialogContext).pop();
                             },
@@ -168,10 +195,23 @@ class CheckAdsScreen extends StatelessWidget {
                             : () async {
                               if (!formKey.currentState!.validate()) return;
 
+                              // Enhanced validation for city and area
+                              if (selectedCity != request.city &&
+                                  selectedArea == null) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Please select an area for the new city',
+                                    ),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                                return;
+                              }
+
                               setState(() => isUpdating = true);
 
                               try {
-                                // Create updates map with only changed fields
                                 final updates = <String, dynamic>{};
                                 if (titleController.text.isNotEmpty) {
                                   updates['title'] = titleController.text;
@@ -183,11 +223,13 @@ class CheckAdsScreen extends StatelessWidget {
                                 if (imageUrlController.text.isNotEmpty) {
                                   updates['imageUrl'] = imageUrlController.text;
                                 }
-                                if (cityController.text.isNotEmpty) {
-                                  updates['city'] = cityController.text;
-                                }
-                                if (areaController.text.isNotEmpty) {
-                                  updates['area'] = areaController.text;
+                                if (selectedCity != request.city) {
+                                  updates['city'] = selectedCity;
+                                  // If city changed, area must be updated too
+                                  updates['area'] = selectedArea;
+                                } else if (selectedArea != request.area) {
+                                  // If only area changed
+                                  updates['area'] = selectedArea;
                                 }
                                 if (linkController.text.isNotEmpty) {
                                   updates['link'] = linkController.text;
@@ -200,20 +242,18 @@ class CheckAdsScreen extends StatelessWidget {
                                   );
                                 }
 
-                                // Clean up controllers before navigation
+                                // Clean up controllers
                                 titleController.dispose();
                                 descriptionController.dispose();
                                 imageUrlController.dispose();
-                                cityController.dispose();
-                                areaController.dispose();
                                 linkController.dispose();
 
                                 if (dialogContext.mounted) {
                                   // Pop the dialog first
                                   Navigator.of(dialogContext).pop();
 
-                                  // Show success message and refresh the page
                                   if (context.mounted) {
+                                    // Show success message
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
                                         content: Text(
@@ -222,12 +262,13 @@ class CheckAdsScreen extends StatelessWidget {
                                       ),
                                     );
 
-                                    // Push a new instance of CheckAdsScreen
-                                    Navigator.pushReplacement(
-                                      context,
+                                    // Pop current screen and push a new instance
+                                    Navigator.of(context).pushAndRemoveUntil(
                                       MaterialPageRoute(
                                         builder: (context) => CheckAdsScreen(),
                                       ),
+                                      (route) =>
+                                          false, // Remove all previous routes
                                     );
                                   }
                                 }
@@ -236,8 +277,6 @@ class CheckAdsScreen extends StatelessWidget {
                                 titleController.dispose();
                                 descriptionController.dispose();
                                 imageUrlController.dispose();
-                                cityController.dispose();
-                                areaController.dispose();
                                 linkController.dispose();
 
                                 setState(() => isUpdating = false);
