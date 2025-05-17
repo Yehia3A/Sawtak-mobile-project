@@ -240,8 +240,7 @@ void _showChatEndedPopup() {
             String targetRoute = '/home';
             if (_role == 'Citizen') targetRoute = '/citizenHome';
             if (_role == 'Advertiser') targetRoute = '/advertiserHome';
-            if (_role == 'Gov Admin') targetRoute = '/govHome';
-
+            
             Navigator.of(context).pushReplacementNamed(targetRoute);
           },
           child: Text('OK'),

@@ -49,9 +49,12 @@ class ChatService {
 
   Future<void> endChat(String chatId) async {
     await FirebaseFirestore.instance
-        .collection('chats')
-        .doc(chatId)
-        .update({'isEnded': true});
+    .collection('chats')
+    .doc(chatId)
+    .update({
+      'isEnded': true,
+      'isActive': false, // <-- this removes it from list
+    });
   }
 
   Future<void> assignAgentToChat(String chatId) async {
