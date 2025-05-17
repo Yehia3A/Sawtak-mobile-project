@@ -11,12 +11,12 @@ class MainLayout extends StatefulWidget {
   final String role;
 
   const MainLayout({
-    Key? key,
+    super.key,
     required this.pages,
     required this.navItems,
     required this.isLoggedIn,
     required this.role,
-  }) : super(key: key);
+  });
 
   @override
   _MainLayoutState createState() => _MainLayoutState();

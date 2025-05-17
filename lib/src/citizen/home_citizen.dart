@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../services/user.serivce.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class HomeCitizen extends StatelessWidget {
