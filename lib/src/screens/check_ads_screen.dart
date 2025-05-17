@@ -29,213 +29,244 @@ class CheckAdsScreen extends StatelessWidget {
     AdvertisementRequest request,
   ) async {
     final formKey = GlobalKey<FormState>();
-    final titleController = TextEditingController();
-    final descriptionController = TextEditingController();
-    final imageUrlController = TextEditingController();
-    final cityController = TextEditingController();
-    final areaController = TextEditingController();
-    final linkController = TextEditingController();
+
+    // Move controllers to be class fields to better manage their lifecycle
+    late final titleController = TextEditingController();
+    late final descriptionController = TextEditingController();
+    late final imageUrlController = TextEditingController();
+    late final cityController = TextEditingController();
+    late final areaController = TextEditingController();
+    late final linkController = TextEditingController();
 
     bool isUpdating = false;
 
     // Show the dialog
-    return showDialog(
+    return showDialog<void>(
       context: context,
-      barrierDismissible: false, // Prevent dismissing while updating
-      builder: (BuildContext context) {
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
         return StatefulBuilder(
           builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Edit Advertisement'),
-              content: Form(
-                key: formKey,
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        'Leave fields empty to keep current values',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                          fontStyle: FontStyle.italic,
+            return WillPopScope(
+              onWillPop: () async {
+                // Clean up controllers before popping
+                titleController.dispose();
+                descriptionController.dispose();
+                imageUrlController.dispose();
+                cityController.dispose();
+                areaController.dispose();
+                linkController.dispose();
+                return true;
+              },
+              child: AlertDialog(
+                title: const Text('Edit Advertisement'),
+                content: Form(
+                  key: formKey,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          'Leave fields empty to keep current values',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                            fontStyle: FontStyle.italic,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: titleController,
-                        decoration: InputDecoration(
-                          labelText: 'Title',
-                          hintText: request.title,
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: titleController,
+                          decoration: InputDecoration(
+                            labelText: 'Title',
+                            hintText: request.title,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        controller: descriptionController,
-                        decoration: InputDecoration(
-                          labelText: 'Description',
-                          hintText: request.description,
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: descriptionController,
+                          decoration: InputDecoration(
+                            labelText: 'Description',
+                            hintText: request.description,
+                          ),
+                          maxLines: 3,
                         ),
-                        maxLines: 3,
-                      ),
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        controller: imageUrlController,
-                        decoration: InputDecoration(
-                          labelText: 'Image URL',
-                          hintText: request.imageUrl,
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: imageUrlController,
+                          decoration: InputDecoration(
+                            labelText: 'Image URL',
+                            hintText: request.imageUrl,
+                          ),
+                          validator: (value) {
+                            if (value != null &&
+                                value.isNotEmpty &&
+                                !_isValidUrl(value)) {
+                              return 'Please enter a valid URL';
+                            }
+                            return null;
+                          },
                         ),
-                        validator: (value) {
-                          if (value != null &&
-                              value.isNotEmpty &&
-                              !_isValidUrl(value)) {
-                            return 'Please enter a valid URL';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        controller: cityController,
-                        decoration: InputDecoration(
-                          labelText: 'City',
-                          hintText: request.city,
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: cityController,
+                          decoration: InputDecoration(
+                            labelText: 'City',
+                            hintText: request.city,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        controller: areaController,
-                        decoration: InputDecoration(
-                          labelText: 'Area',
-                          hintText: request.area,
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: areaController,
+                          decoration: InputDecoration(
+                            labelText: 'Area',
+                            hintText: request.area,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        controller: linkController,
-                        decoration: InputDecoration(
-                          labelText: 'Link',
-                          hintText:
-                              request.link.isEmpty ? 'No link' : request.link,
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: linkController,
+                          decoration: InputDecoration(
+                            labelText: 'Link',
+                            hintText:
+                                request.link.isEmpty ? 'No link' : request.link,
+                          ),
+                          validator: (value) {
+                            if (value != null &&
+                                value.isNotEmpty &&
+                                !_isValidUrl(value)) {
+                              return 'Please enter a valid URL';
+                            }
+                            return null;
+                          },
                         ),
-                        validator: (value) {
-                          if (value != null &&
-                              value.isNotEmpty &&
-                              !_isValidUrl(value)) {
-                            return 'Please enter a valid URL';
-                          }
-                          return null;
-                        },
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed:
-                      isUpdating
-                          ? null
-                          : () {
-                            titleController.dispose();
-                            descriptionController.dispose();
-                            imageUrlController.dispose();
-                            cityController.dispose();
-                            areaController.dispose();
-                            linkController.dispose();
-                            Navigator.of(context).pop();
-                          },
-                  child: const Text('Cancel'),
-                ),
-                TextButton(
-                  onPressed:
-                      isUpdating
-                          ? null
-                          : () async {
-                            if (!formKey.currentState!.validate()) return;
-
-                            setState(() => isUpdating = true);
-
-                            try {
-                              // Create updates map with only changed fields
-                              final updates = <String, dynamic>{};
-                              if (titleController.text.isNotEmpty) {
-                                updates['title'] = titleController.text;
-                              }
-                              if (descriptionController.text.isNotEmpty) {
-                                updates['description'] =
-                                    descriptionController.text;
-                              }
-                              if (imageUrlController.text.isNotEmpty) {
-                                updates['imageUrl'] = imageUrlController.text;
-                              }
-                              if (cityController.text.isNotEmpty) {
-                                updates['city'] = cityController.text;
-                              }
-                              if (areaController.text.isNotEmpty) {
-                                updates['area'] = areaController.text;
-                              }
-                              if (linkController.text.isNotEmpty) {
-                                updates['link'] = linkController.text;
-                              }
-
-                              if (updates.isNotEmpty) {
-                                await _adService.updateRequest(
-                                  request.id,
-                                  updates,
-                                );
-                              }
-
-                              // Dispose controllers after successful update
+                actions: [
+                  TextButton(
+                    onPressed:
+                        isUpdating
+                            ? null
+                            : () {
+                              // Clean up controllers before popping
                               titleController.dispose();
                               descriptionController.dispose();
                               imageUrlController.dispose();
                               cityController.dispose();
                               areaController.dispose();
                               linkController.dispose();
+                              Navigator.of(dialogContext).pop();
+                            },
+                    child: const Text('Cancel'),
+                  ),
+                  TextButton(
+                    onPressed:
+                        isUpdating
+                            ? null
+                            : () async {
+                              if (!formKey.currentState!.validate()) return;
 
-                              if (context.mounted) {
-                                Navigator.of(context).pop();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Advertisement updated successfully',
-                                    ),
-                                  ),
-                                );
+                              setState(() => isUpdating = true);
+
+                              try {
+                                // Create updates map with only changed fields
+                                final updates = <String, dynamic>{};
+                                if (titleController.text.isNotEmpty) {
+                                  updates['title'] = titleController.text;
+                                }
+                                if (descriptionController.text.isNotEmpty) {
+                                  updates['description'] =
+                                      descriptionController.text;
+                                }
+                                if (imageUrlController.text.isNotEmpty) {
+                                  updates['imageUrl'] = imageUrlController.text;
+                                }
+                                if (cityController.text.isNotEmpty) {
+                                  updates['city'] = cityController.text;
+                                }
+                                if (areaController.text.isNotEmpty) {
+                                  updates['area'] = areaController.text;
+                                }
+                                if (linkController.text.isNotEmpty) {
+                                  updates['link'] = linkController.text;
+                                }
+
+                                if (updates.isNotEmpty) {
+                                  await _adService.updateRequest(
+                                    request.id,
+                                    updates,
+                                  );
+                                }
+
+                                // Clean up controllers before navigation
+                                titleController.dispose();
+                                descriptionController.dispose();
+                                imageUrlController.dispose();
+                                cityController.dispose();
+                                areaController.dispose();
+                                linkController.dispose();
+
+                                if (dialogContext.mounted) {
+                                  // Pop the dialog first
+                                  Navigator.of(dialogContext).pop();
+
+                                  // Show success message and refresh the page
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Advertisement updated successfully',
+                                        ),
+                                      ),
+                                    );
+
+                                    // Push a new instance of CheckAdsScreen
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => CheckAdsScreen(),
+                                      ),
+                                    );
+                                  }
+                                }
+                              } catch (e) {
+                                // Clean up controllers on error
+                                titleController.dispose();
+                                descriptionController.dispose();
+                                imageUrlController.dispose();
+                                cityController.dispose();
+                                areaController.dispose();
+                                linkController.dispose();
+
+                                setState(() => isUpdating = false);
+                                if (dialogContext.mounted) {
+                                  Navigator.of(dialogContext).pop();
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Error: $e')),
+                                    );
+                                  }
+                                }
                               }
-                            } catch (e) {
-                              setState(() => isUpdating = false);
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Error: $e')),
-                                );
-                              }
-                            }
-                          },
-                  child:
-                      isUpdating
-                          ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                          : const Text('Update'),
-                ),
-              ],
+                            },
+                    child:
+                        isUpdating
+                            ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                            : const Text('Update'),
+                  ),
+                ],
+              ),
             );
           },
         );
       },
-    ).then((_) {
-      // Ensure controllers are disposed if dialog is dismissed
-      if (titleController.hasListeners) titleController.dispose();
-      if (descriptionController.hasListeners) descriptionController.dispose();
-      if (imageUrlController.hasListeners) imageUrlController.dispose();
-      if (cityController.hasListeners) cityController.dispose();
-      if (areaController.hasListeners) areaController.dispose();
-      if (linkController.hasListeners) linkController.dispose();
-    });
+    );
   }
 
   @override
