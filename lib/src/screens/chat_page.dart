@@ -110,7 +110,7 @@ return _buildChatUI();
                         padding: const EdgeInsets.all(12),
                         margin: const EdgeInsets.symmetric(vertical: 4),
                         decoration: BoxDecoration(
-                          color: isMe ? Colors.amber : Colors.grey[300],
+  color: isMe ? Color(0xFFEACE9F) : Color(0xFFA77A37),
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Text(msg.content),
@@ -306,7 +306,7 @@ class _ChatPageAssignedState extends State<ChatPageAssigned> {
                         padding: const EdgeInsets.all(12),
                         margin: const EdgeInsets.symmetric(vertical: 4),
                         decoration: BoxDecoration(
-                          color: isMe ? Colors.amber : Colors.grey[300],
+  color: isMe ? Color(0xFFEACE9F) : Color(0xFFA77A37),
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Text(msg.content),
@@ -343,6 +343,38 @@ class _ChatPageAssignedState extends State<ChatPageAssigned> {
     ),
     );
   }
+void _showChatEndedPopup() {
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) => AlertDialog(
+      title: Text('Chat Ended'),
+      content: Text('This chat has been ended by the user.'),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+            Navigator.of(context).pushReplacementNamed('/home');
+          },
+          child: Text('OK'),
+        ),
+      ],
+    ),
+  );
+}
+  @override
+void initState() {
+  super.initState();
+  FirebaseFirestore.instance
+      .collection('chats')
+      .doc(widget.chatId)
+      .snapshots()
+      .listen((doc) {
+    if (doc.exists && doc['isEnded'] == true && mounted) {
+      _showChatEndedPopup();
+    }
+  });
+}
 }
 
 Future<bool> showEndChatDialog(BuildContext context) async {
