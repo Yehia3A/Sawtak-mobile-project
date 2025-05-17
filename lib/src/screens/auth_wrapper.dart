@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth.service.dart';
 import '../services/user.serivce.dart';
-import 'home_citizen.dart';
-import 'home_gov.dart';
-import 'home_advertiser.dart';
+import '../citizen/home_citizen.dart';
+import '../gov/home_gov.dart';
+import '../advertiser/home_advertiser.dart';
 import 'mainLayout.dart';
 
 class AuthWrapper extends StatelessWidget {

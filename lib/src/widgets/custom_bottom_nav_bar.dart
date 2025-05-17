@@ -110,10 +110,13 @@ class CustomBottomNavBar extends StatelessWidget {
             child: CustomPaint(painter: _NavBarBackgroundPainter()),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: _buildButtons(),
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children:
+                  _buildButtons()
+                      .map((button) => Expanded(child: button))
+                      .toList(),
             ),
           ),
         ],
@@ -137,7 +140,10 @@ class _NavBarButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final labelColor = selected ? const Color(0xFFFFC107) : Colors.black;
+    final labelColor =
+        selected
+            ? const Color(0xFFFFC107)
+            : const Color.fromARGB(255, 89, 88, 88);
     return GestureDetector(
       onTap: onTap,
       child: Column(
@@ -156,19 +162,22 @@ class _NavBarButton extends StatelessWidget {
                     ),
                   ],
                 ),
-                padding: const EdgeInsets.all(12),
-                child: SvgPicture.asset(assetPath, width: 28, height: 28),
+                padding: const EdgeInsets.all(8),
+                child: SvgPicture.asset(assetPath, width: 24, height: 24),
               )
-              : SvgPicture.asset(assetPath, width: 28, height: 28),
+              : SvgPicture.asset(assetPath, width: 24, height: 24),
           const SizedBox(height: 4),
           Text(
             label,
             style: TextStyle(
               color: labelColor,
               fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-              fontSize: 13,
+              fontSize: 11,
               decoration: TextDecoration.none,
             ),
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -182,7 +191,10 @@ class _NavBarBackgroundPainter extends CustomPainter {
     final paint =
         Paint()
           ..shader = const LinearGradient(
-            colors: [Color(0xFF2D1400), Color(0xFFFFC107)],
+            colors: [
+              Color.fromARGB(255, 219, 218, 218),
+              Color.fromARGB(255, 193, 83, 75),
+            ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));

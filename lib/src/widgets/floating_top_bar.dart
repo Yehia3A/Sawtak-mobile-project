@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/auth.service.dart';
 
 class FloatingTopBar extends StatelessWidget {
   final String userName;
@@ -6,23 +7,40 @@ class FloatingTopBar extends StatelessWidget {
 
   const FloatingTopBar({super.key, this.userName = '', this.onNotifications});
 
+  Future<void> _handleLogout(BuildContext context) async {
+    try {
+      await AuthService().signOut();
+      if (context.mounted) {
+        Navigator.pushReplacementNamed(context, '/welcome');
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to logout. Please try again.')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: Align(
-        alignment: Alignment.topLeft,
+        alignment: Alignment.topCenter,
         child: Padding(
-          padding: const EdgeInsets.only(top: 16, left: 12),
+          padding: const EdgeInsets.only(top: 16),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF2D1400), Color(0xFFFFC107)],
+                colors: [
+                  Color.fromARGB(255, 219, 218, 218),
+                  Color.fromARGB(255, 193, 83, 75),
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white24, width: 1.5),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.2),
@@ -53,6 +71,12 @@ class FloatingTopBar extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                     letterSpacing: 0.5,
                   ),
+                ),
+                const SizedBox(width: 12),
+                IconButton(
+                  icon: const Icon(Icons.logout, color: Colors.white, size: 28),
+                  onPressed: () => _handleLogout(context),
+                  tooltip: 'Logout',
                 ),
               ],
             ),

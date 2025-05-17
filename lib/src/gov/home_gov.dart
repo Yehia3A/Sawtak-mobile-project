@@ -2,6 +2,10 @@
 
 import 'package:flutter/material.dart';
 import '../services/auth.service.dart';
+import 'create_announcement_screen.dart';
+import 'create_poll_screen.dart';
+import 'posts_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class HomeGovernment extends StatelessWidget {
   const HomeGovernment({super.key});
@@ -100,18 +104,51 @@ class HomeGovernment extends StatelessWidget {
                         ),
                         _buildFeatureCard(
                           context,
-                          'Announcements',
+                          'Create Announcement',
                           Icons.campaign,
                           () {
-                            // TODO: Implement announcements
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (context) =>
+                                        const CreateAnnouncementScreen(),
+                              ),
+                            );
                           },
                         ),
                         _buildFeatureCard(
                           context,
-                          'Reports',
-                          Icons.summarize,
+                          'Create Poll',
+                          Icons.poll,
                           () {
-                            // TODO: Implement reports
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const CreatePollScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                        _buildFeatureCard(
+                          context,
+                          'Show All Posts',
+                          Icons.list_alt,
+                          () async {
+                            final user = FirebaseAuth.instance.currentUser;
+                            if (user == null) return;
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => GovPostsScreen(
+                                      currentUserId: user.uid,
+                                      currentUserName:
+                                          user.displayName ?? 'Admin',
+                                      userRole: 'gov_admin',
+                                    ),
+                              ),
+                            );
                           },
                         ),
                         _buildFeatureCard(
