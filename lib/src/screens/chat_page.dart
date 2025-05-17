@@ -111,8 +111,12 @@ return _buildChatUI();
                         margin: const EdgeInsets.symmetric(vertical: 4),
                         decoration: BoxDecoration(
   color: isMe ? Color(0xFFEACE9F) : Color(0xFFA77A37),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
+  borderRadius: BorderRadius.circular(16),
+  border: isMe
+      ? Border.all(color: Color(0xFFA77A37), width: 2)
+      : null,
+),
+
                         child: Text(msg.content),
                       ),
                     );
@@ -233,7 +237,12 @@ void _showChatEndedPopup() {
         TextButton(
           onPressed: () {
             Navigator.of(context).pop(); // close dialog
-            Navigator.of(context).pushReplacementNamed('/home'); // adjust if needed
+            String targetRoute = '/home';
+            if (_role == 'Citizen') targetRoute = '/citizenHome';
+            if (_role == 'Advertiser') targetRoute = '/advertiserHome';
+            if (_role == 'Gov Admin') targetRoute = '/govHome';
+
+            Navigator.of(context).pushReplacementNamed(targetRoute);
           },
           child: Text('OK'),
         ),
@@ -307,8 +316,12 @@ class _ChatPageAssignedState extends State<ChatPageAssigned> {
                         margin: const EdgeInsets.symmetric(vertical: 4),
                         decoration: BoxDecoration(
   color: isMe ? Color(0xFFEACE9F) : Color(0xFFA77A37),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
+  borderRadius: BorderRadius.circular(16),
+  border: isMe
+      ? Border.all(color: Color(0xFFA77A37), width: 2)
+      : null,
+),
+
                         child: Text(msg.content),
                       ),
                     );
@@ -354,7 +367,7 @@ void _showChatEndedPopup() {
         TextButton(
           onPressed: () {
             Navigator.of(context).pop();
-            Navigator.of(context).pushReplacementNamed('/home');
+            Navigator.of(context).pushReplacementNamed('/govHome');
           },
           child: Text('OK'),
         ),
