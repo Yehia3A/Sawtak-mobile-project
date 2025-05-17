@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/advertisement_request.dart';
@@ -314,266 +315,458 @@ class CheckAdsScreen extends StatelessWidget {
       backgroundColor: Colors.transparent,
       body: Stack(
         children: [
+          // Background image
           Image.asset(
             'assets/homepage.jpg',
             fit: BoxFit.cover,
             width: double.infinity,
             height: double.infinity,
           ),
-          Container(color: Colors.black.withOpacity(0.4)),
+
           SafeArea(
             child: Column(
               children: [
-                // Header
+                // Header with improved styling
                 Container(
-                  padding: const EdgeInsets.all(16),
-                  child: const Text(
-                    'Your Advertisement Requests',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  padding: const EdgeInsets.all(20),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.campaign_outlined,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Your Advertisements',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Manage your ad requests',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-                // Requests List
+
+                // Requests List with frosted glass effect
                 Expanded(
-                  child: StreamBuilder<List<AdvertisementRequest>>(
-                    stream: _adService.getAdvertiserRequests(
-                      _authService.currentUser?.uid ?? '',
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(30),
+                      topRight: Radius.circular(30),
                     ),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-
-                      if (snapshot.hasError) {
-                        return Center(
-                          child: Text(
-                            'Error: ${snapshot.error}',
-                            style: const TextStyle(color: Colors.white),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      child: Container(
+                        padding: const EdgeInsets.only(top: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(30),
+                            topRight: Radius.circular(30),
                           ),
-                        );
-                      }
-
-                      final requests = snapshot.data ?? [];
-
-                      if (requests.isEmpty) {
-                        return Center(
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.white70),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Text(
-                              'No requests made',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                              ),
-                            ),
+                        ),
+                        child: StreamBuilder<List<AdvertisementRequest>>(
+                          stream: _adService.getAdvertiserRequests(
+                            _authService.currentUser?.uid ?? '',
                           ),
-                        );
-                      }
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Center(
+                                child: CircularProgressIndicator(),
+                              );
+                            }
 
-                      return ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: requests.length,
-                        itemBuilder: (context, index) {
-                          final request = requests[index];
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Image
-                                ClipRRect(
-                                  borderRadius: const BorderRadius.vertical(
-                                    top: Radius.circular(4),
-                                  ),
-                                  child: AspectRatio(
-                                    aspectRatio: 16 / 9,
-                                    child: Image.network(
-                                      request.imageUrl,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (
-                                        context,
-                                        error,
-                                        stackTrace,
-                                      ) {
-                                        return Container(
-                                          color: Colors.grey[300],
-                                          child: const Center(
-                                            child: Icon(
-                                              Icons.error_outline,
-                                              size: 40,
-                                              color: Colors.red,
-                                            ),
-                                          ),
-                                        );
-                                      },
+                            if (snapshot.hasError) {
+                              return Center(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.error_outline,
+                                      color: Colors.red,
+                                      size: 48,
                                     ),
-                                  ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      'Error: ${snapshot.error}',
+                                      style: const TextStyle(color: Colors.red),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
                                 ),
-                                Padding(
-                                  padding: const EdgeInsets.all(16),
+                              );
+                            }
+
+                            final requests = snapshot.data ?? [];
+
+                            if (requests.isEmpty) {
+                              return Center(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.campaign_outlined,
+                                      size: 64,
+                                      color: Colors.grey[400],
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      'No advertisements yet',
+                                      style: TextStyle(
+                                        color: Colors.grey[600],
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Create your first ad to get started',
+                                      style: TextStyle(
+                                        color: Colors.grey[400],
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
+
+                            return ListView.builder(
+                              padding: const EdgeInsets.all(16),
+                              itemCount: requests.length,
+                              itemBuilder: (context, index) {
+                                final request = requests[index];
+                                return Card(
+                                  margin: const EdgeInsets.only(bottom: 16),
+                                  elevation: 0,
+                                  color: Colors.white.withOpacity(0.8),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(15),
+                                  ),
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      // Header with actions
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
+                                      // Image with gradient overlay
+                                      Stack(
                                         children: [
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  request.title,
-                                                  style: const TextStyle(
-                                                    fontSize: 20,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
+                                          ClipRRect(
+                                            borderRadius:
+                                                const BorderRadius.vertical(
+                                                  top: Radius.circular(15),
                                                 ),
-                                                const SizedBox(height: 4),
-                                                Text(
-                                                  'Posted by ${request.posterName}',
-                                                  style: TextStyle(
-                                                    color: Colors.grey[600],
-                                                    fontSize: 14,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              if (request.status == 'pending')
-                                                IconButton(
-                                                  icon: const Icon(Icons.edit),
-                                                  onPressed:
-                                                      () => _showEditDialog(
-                                                        context,
-                                                        request,
+                                            child: AspectRatio(
+                                              aspectRatio: 16 / 9,
+                                              child: Image.network(
+                                                request.imageUrl,
+                                                fit: BoxFit.cover,
+                                                errorBuilder: (
+                                                  context,
+                                                  error,
+                                                  stackTrace,
+                                                ) {
+                                                  return Container(
+                                                    color: Colors.grey[300],
+                                                    child: const Center(
+                                                      child: Icon(
+                                                        Icons.error_outline,
+                                                        size: 40,
+                                                        color: Colors.red,
                                                       ),
-                                                ),
-                                              IconButton(
-                                                icon: const Icon(Icons.delete),
-                                                onPressed: () {
-                                                  _adService.deleteRequest(
-                                                    request.id,
+                                                    ),
                                                   );
                                                 },
                                               ),
-                                            ],
+                                            ),
                                           ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 12),
-                                      // Status badge
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 4,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color:
-                                              request.status == 'pending'
-                                                  ? Colors.orange
-                                                  : Colors.green,
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          request.status.toUpperCase(),
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 12),
-                                      // Description
-                                      Text(
-                                        request.description,
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          height: 1.5,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 12),
-                                      // Location
-                                      Row(
-                                        children: [
-                                          const Icon(
-                                            Icons.location_on,
-                                            size: 16,
-                                            color: Colors.grey,
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            '${request.city}, ${request.area}',
-                                            style: const TextStyle(
-                                              color: Colors.grey,
-                                              fontSize: 14,
+                                          // Status badge overlay
+                                          Positioned(
+                                            top: 12,
+                                            right: 12,
+                                            child: Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 12,
+                                                    vertical: 6,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color:
+                                                    request.status == 'pending'
+                                                        ? Colors.orange
+                                                        : Colors.green,
+                                                borderRadius:
+                                                    BorderRadius.circular(20),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: Colors.black
+                                                        .withOpacity(0.2),
+                                                    blurRadius: 4,
+                                                    offset: const Offset(0, 2),
+                                                  ),
+                                                ],
+                                              ),
+                                              child: Text(
+                                                request.status.toUpperCase(),
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
                                             ),
                                           ),
                                         ],
                                       ),
-                                      if (request.link.isNotEmpty) ...[
-                                        const SizedBox(height: 12),
-                                        // Link
-                                        InkWell(
-                                          onTap: () => _launchUrl(request.link),
-                                          child: Row(
-                                            children: [
-                                              const Icon(
-                                                Icons.link,
-                                                size: 16,
-                                                color: Colors.blue,
-                                              ),
-                                              const SizedBox(width: 4),
-                                              Expanded(
-                                                child: Text(
-                                                  request.link,
-                                                  style: const TextStyle(
-                                                    color: Colors.blue,
-                                                    decoration:
-                                                        TextDecoration
-                                                            .underline,
-                                                    fontSize: 14,
+
+                                      // Content
+                                      Padding(
+                                        padding: const EdgeInsets.all(16),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            // Title and actions row
+                                            Row(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Text(
+                                                        request.title,
+                                                        style: const TextStyle(
+                                                          fontSize: 20,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(height: 4),
+                                                      Text(
+                                                        'Posted by ${request.posterName}',
+                                                        style: TextStyle(
+                                                          color:
+                                                              Colors.grey[600],
+                                                          fontSize: 14,
+                                                        ),
+                                                      ),
+                                                    ],
                                                   ),
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
+                                                ),
+                                                // Action buttons with improved styling
+                                                if (request.status == 'pending')
+                                                  IconButton(
+                                                    icon: const Icon(
+                                                      Icons.edit,
+                                                    ),
+                                                    color: Colors.blue,
+                                                    onPressed:
+                                                        () => _showEditDialog(
+                                                          context,
+                                                          request,
+                                                        ),
+                                                  ),
+                                                IconButton(
+                                                  icon: const Icon(
+                                                    Icons.delete,
+                                                  ),
+                                                  color: Colors.red,
+                                                  onPressed: () {
+                                                    showDialog(
+                                                      context: context,
+                                                      builder:
+                                                          (
+                                                            context,
+                                                          ) => AlertDialog(
+                                                            title: const Text(
+                                                              'Delete Advertisement',
+                                                            ),
+                                                            content: const Text(
+                                                              'Are you sure you want to delete this advertisement?',
+                                                            ),
+                                                            actions: [
+                                                              TextButton(
+                                                                onPressed:
+                                                                    () => Navigator.pop(
+                                                                      context,
+                                                                    ),
+                                                                child:
+                                                                    const Text(
+                                                                      'Cancel',
+                                                                    ),
+                                                              ),
+                                                              TextButton(
+                                                                onPressed: () {
+                                                                  _adService
+                                                                      .deleteRequest(
+                                                                        request
+                                                                            .id,
+                                                                      );
+                                                                  Navigator.pop(
+                                                                    context,
+                                                                  );
+                                                                },
+                                                                style: TextButton.styleFrom(
+                                                                  foregroundColor:
+                                                                      Colors
+                                                                          .red,
+                                                                ),
+                                                                child:
+                                                                    const Text(
+                                                                      'Delete',
+                                                                    ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                    );
+                                                  },
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 12),
+                                            // Description
+                                            Text(
+                                              request.description,
+                                              style: const TextStyle(
+                                                fontSize: 16,
+                                                height: 1.5,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 16),
+                                            // Location with icon
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 12,
+                                                    vertical: 8,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color: Colors.amber,
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(
+                                                    Icons.location_on,
+                                                    size: 16,
+                                                    color: Colors.white,
+                                                  ),
+                                                  const SizedBox(width: 4),
+                                                  Text(
+                                                    '${request.city}, ${request.area}',
+                                                    style: const TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 14,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            if (request.link.isNotEmpty) ...[
+                                              const SizedBox(height: 12),
+                                              // Link with improved styling
+                                              InkWell(
+                                                onTap:
+                                                    () => _launchUrl(
+                                                      request.link,
+                                                    ),
+                                                child: Container(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 12,
+                                                        vertical: 8,
+                                                      ),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.amber
+                                                        .withOpacity(0.2),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          8,
+                                                        ),
+                                                  ),
+                                                  child: Row(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      Icon(
+                                                        Icons.link,
+                                                        size: 16,
+                                                        color: Colors.amber,
+                                                      ),
+                                                      const SizedBox(width: 4),
+                                                      Flexible(
+                                                        child: Text(
+                                                          request.link,
+                                                          style: TextStyle(
+                                                            color: Colors.amber,
+                                                            decoration:
+                                                                TextDecoration
+                                                                    .underline,
+                                                            fontSize: 14,
+                                                          ),
+                                                          maxLines: 1,
+                                                          overflow:
+                                                              TextOverflow
+                                                                  .ellipsis,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
                                                 ),
                                               ),
                                             ],
-                                          ),
+                                          ],
                                         ),
-                                      ],
+                                      ),
                                     ],
                                   ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      );
-                    },
+                                );
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ],
             ),
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => Navigator.pushNamed(context, '/check_ads'),
+        icon: const Icon(Icons.list),
+        label: const Text('Your Ads'),
+        backgroundColor: Colors.amber,
       ),
     );
   }

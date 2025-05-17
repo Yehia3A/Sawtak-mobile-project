@@ -4,6 +4,7 @@ import '../services/advertisement_service.dart';
 import '../services/auth_service.dart';
 import '../data/egypt_locations.dart';
 import 'package:uuid/uuid.dart';
+import 'dart:ui';
 
 class HomeAdvertiser extends StatefulWidget {
   const HomeAdvertiser({super.key});
@@ -111,13 +112,13 @@ class _HomeAdvertiserState extends State<HomeAdvertiser> {
       backgroundColor: Colors.transparent,
       body: Stack(
         children: [
+          // Background image
           Image.asset(
             'assets/homepage.jpg',
             fit: BoxFit.cover,
             width: double.infinity,
             height: double.infinity,
           ),
-          Container(color: Colors.black.withOpacity(0.4)),
 
           SafeArea(
             child: SingleChildScrollView(
@@ -125,212 +126,211 @@ class _HomeAdvertiserState extends State<HomeAdvertiser> {
                 key: _formKey,
                 child: Column(
                   children: [
-                    // Prompt box
+                    // Header with icon
                     Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.white70),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Text(
-                          'Create Advertisements posts for your Shop to people 1 step close to you!',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    ),
-
-                    // Section title
-                    const Text(
-                      'Create Advertisement Post',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Image URL field
-                    _buildInputField(
-                      'Image URL *',
-                      _imageUrlController,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter an image URL';
-                        }
-                        final uri = Uri.tryParse(value);
-                        if (uri == null || !uri.isAbsolute) {
-                          return 'Please enter a valid URL';
-                        }
-                        return null;
-                      },
-                    ),
-
-                    const SizedBox(height: 16),
-                    // Title field
-                    _buildInputField(
-                      'Title *',
-                      _titleController,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter a title';
-                        }
-                        return null;
-                      },
-                    ),
-
-                    const SizedBox(height: 16),
-                    // Description field
-                    _buildInputField(
-                      'Description *',
-                      _descriptionController,
-                      maxLines: 4,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter a description';
-                        }
-                        return null;
-                      },
-                    ),
-
-                    const SizedBox(height: 16),
-                    // City Dropdown
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        decoration: BoxDecoration(
-                          color: Colors.white70,
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        child: DropdownButtonFormField<String>(
-                          value: _selectedCity,
-                          hint: const Text('Select City *'),
-                          isExpanded: true,
-                          items:
-                              getAllCities()
-                                  .map(
-                                    (city) => DropdownMenuItem(
-                                      value: city,
-                                      child: Text(city),
-                                    ),
-                                  )
-                                  .toList(),
-                          onChanged: _onCityChanged,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please select a city';
-                            }
-                            return null;
-                          },
-                          decoration: const InputDecoration(
-                            border: InputBorder.none,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-                    // Area Dropdown
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        decoration: BoxDecoration(
-                          color: Colors.white70,
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        child: DropdownButtonFormField<String>(
-                          value: _selectedArea,
-                          hint: const Text('Select Area *'),
-                          isExpanded: true,
-                          items:
-                              _availableAreas
-                                  .map(
-                                    (area) => DropdownMenuItem(
-                                      value: area,
-                                      child: Text(area),
-                                    ),
-                                  )
-                                  .toList(),
-                          onChanged: (newValue) {
-                            setState(() {
-                              _selectedArea = newValue;
-                            });
-                          },
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please select an area';
-                            }
-                            return null;
-                          },
-                          decoration: const InputDecoration(
-                            border: InputBorder.none,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-                    // Link field
-                    _buildInputField(
-                      'Link (Facebook, Menu, etc.)',
-                      _linkController,
-                      validator: (value) {
-                        if (value != null && value.isNotEmpty) {
-                          final uri = Uri.tryParse(value);
-                          if (uri == null || !uri.isAbsolute) {
-                            return 'Please enter a valid URL';
-                          }
-                        }
-                        return null;
-                      },
-                    ),
-
-                    const SizedBox(height: 24),
-                    // Post button
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton(
-                          onPressed: _submitForm,
-                          style: ElevatedButton.styleFrom(
-                            padding: EdgeInsets.zero,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                          ),
-                          child: Ink(
+                      padding: const EdgeInsets.all(20),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFF2196F3), Color(0xFF0D47A1)],
-                                begin: Alignment.centerLeft,
-                                end: Alignment.centerRight,
-                              ),
-                              borderRadius: BorderRadius.circular(30),
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Center(
-                              child: Text(
-                                'Post',
+                            child: const Icon(
+                              Icons.add_business,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          const Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Create Advertisement',
                                 style: TextStyle(
                                   color: Colors.white,
+                                  fontSize: 24,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
+                              SizedBox(height: 4),
+                              Text(
+                                'Reach customers near you',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Form Container with frosted glass effect
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                        child: Container(
+                          margin: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.2),
                             ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Image URL field
+                              _buildInputField(
+                                'Image URL *',
+                                _imageUrlController,
+                                prefixIcon: Icons.image,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter an image URL';
+                                  }
+                                  final uri = Uri.tryParse(value);
+                                  if (uri == null || !uri.isAbsolute) {
+                                    return 'Please enter a valid URL';
+                                  }
+                                  return null;
+                                },
+                              ),
+
+                              const SizedBox(height: 16),
+                              // Title field
+                              _buildInputField(
+                                'Title *',
+                                _titleController,
+                                prefixIcon: Icons.title,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter a title';
+                                  }
+                                  return null;
+                                },
+                              ),
+
+                              const SizedBox(height: 16),
+                              // Description field
+                              _buildInputField(
+                                'Description *',
+                                _descriptionController,
+                                prefixIcon: Icons.description,
+                                maxLines: 4,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter a description';
+                                  }
+                                  return null;
+                                },
+                              ),
+
+                              const SizedBox(height: 16),
+                              Text(
+                                'Location',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white.withOpacity(0.8),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              // City Dropdown with improved styling
+                              _buildDropdownField(
+                                value: _selectedCity,
+                                hint: 'Select City *',
+                                items: getAllCities(),
+                                icon: Icons.location_city,
+                                onChanged: _onCityChanged,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please select a city';
+                                  }
+                                  return null;
+                                },
+                              ),
+
+                              const SizedBox(height: 16),
+                              // Area Dropdown with improved styling
+                              _buildDropdownField(
+                                value: _selectedArea,
+                                hint: 'Select Area *',
+                                items: _availableAreas,
+                                icon: Icons.map,
+                                onChanged: (newValue) {
+                                  setState(() {
+                                    _selectedArea = newValue;
+                                  });
+                                },
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please select an area';
+                                  }
+                                  return null;
+                                },
+                              ),
+
+                              const SizedBox(height: 16),
+                              // Link field
+                              _buildInputField(
+                                'Link (Facebook, Menu, etc.)',
+                                _linkController,
+                                prefixIcon: Icons.link,
+                                validator: (value) {
+                                  if (value != null && value.isNotEmpty) {
+                                    final uri = Uri.tryParse(value);
+                                    if (uri == null || !uri.isAbsolute) {
+                                      return 'Please enter a valid URL';
+                                    }
+                                  }
+                                  return null;
+                                },
+                              ),
+
+                              const SizedBox(height: 24),
+                              // Submit Button
+                              SizedBox(
+                                width: double.infinity,
+                                height: 50,
+                                child: ElevatedButton(
+                                  onPressed: _submitForm,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.amber,
+                                    foregroundColor: Colors.white,
+                                    elevation: 2,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(25),
+                                    ),
+                                  ),
+                                  child: const Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.post_add),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'Post Advertisement',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(height: 32),
                   ],
                 ),
               ),
@@ -338,9 +338,10 @@ class _HomeAdvertiserState extends State<HomeAdvertiser> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Navigator.pushNamed(context, '/check_ads'),
-        child: const Icon(Icons.list),
+        icon: const Icon(Icons.list),
+        label: const Text('Your Ads'),
         backgroundColor: Colors.amber,
       ),
     );
@@ -350,29 +351,64 @@ class _HomeAdvertiserState extends State<HomeAdvertiser> {
     String hint,
     TextEditingController controller, {
     int maxLines = 1,
+    IconData? prefixIcon,
     String? Function(String?)? validator,
   }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.8),
+        borderRadius: BorderRadius.circular(15),
+      ),
       child: TextFormField(
         controller: controller,
         maxLines: maxLines,
-        style: const TextStyle(color: Colors.black),
+        style: const TextStyle(color: Colors.black87),
         validator: validator,
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: const TextStyle(color: Colors.black54),
-          filled: true,
-          fillColor: Colors.white70,
+          hintStyle: TextStyle(color: Colors.grey[600]),
+          prefixIcon:
+              prefixIcon != null
+                  ? Icon(prefixIcon, color: Colors.grey[600])
+                  : null,
+          border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(
-            vertical: 16,
-            horizontal: 20,
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(maxLines > 1 ? 12 : 30),
-            borderSide: BorderSide.none,
+            horizontal: 16,
+            vertical: 12,
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildDropdownField({
+    required String? value,
+    required String hint,
+    required List<String> items,
+    required IconData icon,
+    required void Function(String?)? onChanged,
+    required String? Function(String?)? validator,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.8),
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: DropdownButtonFormField<String>(
+        value: value,
+        hint: Text(hint),
+        isExpanded: true,
+        icon: Icon(icon),
+        decoration: const InputDecoration(
+          contentPadding: EdgeInsets.symmetric(horizontal: 16),
+          border: InputBorder.none,
+        ),
+        items:
+            items
+                .map((item) => DropdownMenuItem(value: item, child: Text(item)))
+                .toList(),
+        onChanged: onChanged,
+        validator: validator,
       ),
     );
   }
