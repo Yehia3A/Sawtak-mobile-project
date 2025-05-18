@@ -196,6 +196,7 @@ class _NavBarButton extends StatelessWidget {
                     fontSize: 15,
                     letterSpacing: 1.2,
                     fontFamily: 'Montserrat', // Use a rounded font if available
+                    decoration: TextDecoration.none, // Remove underline
                     shadows: [
                       Shadow(
                         color: Colors.black.withOpacity(0.13),
@@ -217,6 +218,7 @@ class _NavBarButton extends StatelessWidget {
                   fontSize: 13,
                   letterSpacing: 1.1,
                   fontFamily: 'Montserrat',
+                  decoration: TextDecoration.none, // Remove underline
                 ),
                 textAlign: TextAlign.center,
                 maxLines: 2,

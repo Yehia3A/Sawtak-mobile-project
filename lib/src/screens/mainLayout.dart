@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:gov_citizen_app/src/widgets/top_nav_bar.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
 import '../widgets/floating_top_bar.dart';
 import '../services/user.serivce.dart';
@@ -51,7 +52,7 @@ class _MainLayoutState extends State<MainLayout> {
 
   void _onTabTapped(int index) {
     // If the user is a Citizen and taps the 'Massage the Government' button (index 2), open the chat page
-    if (widget.role == 'Citizen' && index == 2) {
+    if ((widget.role == 'Citizen' || widget.role == 'Gov Admin') && index == 2) {
       Navigator.pushNamed(context, '/chat');
       return;
     }
@@ -71,27 +72,25 @@ class _MainLayoutState extends State<MainLayout> {
         child: Stack(
           children: [
             Positioned.fill(child: _pages[_currentIndex]),
-
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: FutureBuilder<String>(
-                future:
-                    user != null
-                        ? UserService().fetchUserFirstName(user.uid)
-                        : Future.value(''),
-                builder: (context, snapshot) {
-                  final name =
-                      (snapshot.connectionState == ConnectionState.done &&
-                              snapshot.hasData)
-                          ? snapshot.data!
-                          : '';
-                  return FloatingTopBar();
-                },
-              ),
-            ),
-
+            // Positioned(
+            //   top: 0,
+            //   left: 0,
+            //   right: 0,
+            //   child: FutureBuilder<String>(
+            //     future:
+            //         user != null
+            //             ? UserService().fetchUserFirstName(user.uid)
+            //             : Future.value(''),
+            //     builder: (context, snapshot) {
+            //       final name =
+            //           (snapshot.connectionState == ConnectionState.done &&
+            //                   snapshot.hasData)
+            //               ? snapshot.data!
+            //               : '';
+            //       return FloatingTopBar();
+            //     },
+            //   ),
+            // ),
             Positioned(
               left: 0,
               right: 0,
@@ -102,6 +101,8 @@ class _MainLayoutState extends State<MainLayout> {
                 role: widget.role,
               ),
             ),
+            // top bar
+            Positioned(top: 0, left: 0, right: 0, child: TopNavBar()),
           ],
         ),
       ),
