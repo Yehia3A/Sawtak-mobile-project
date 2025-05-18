@@ -37,7 +37,11 @@ class _ChatPageState extends State<ChatPage> {
     setState(() => _chat = chat);
     if (_chat != null) {
       _getChatStream(_chat!.id).listen((doc) {
-        final isEnded = doc['isEnded'] ?? false;
+        final data = doc.data() as Map<String, dynamic>?;
+        final isEnded =
+            data != null && data.containsKey('isEnded')
+                ? data['isEnded'] ?? false
+                : false;
         if (isEnded && mounted) {
           _showChatEndedPopup(); // show dialog
         }
@@ -55,205 +59,217 @@ class _ChatPageState extends State<ChatPage> {
       return _buildAgentChatList();
     }
 
-if (_chat == null) {
-  return const Scaffold(
-    body: Center(child: CircularProgressIndicator()),
-  );
-}
-return _buildChatUI();
+    if (_chat == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    return _buildChatUI();
   }
 
   Widget _buildChatUI() {
     return Container(
-  decoration: const BoxDecoration(
-    image: DecorationImage(
-      image: AssetImage('assets/chat_bg.png'), // Your image file
-      fit: BoxFit.cover,
-    ),
-  ),
-  child: Scaffold(
-    backgroundColor: Colors.transparent,
-      appBar: AppBar(
-        title: const Text('Chat'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.exit_to_app),
-            onPressed: () async {
-              final confirm = await showEndChatDialog(context);
-              if (confirm) {
-                await _chatService.endChat(_chat!.id);
-                Navigator.pop(context);
-              }
-            },
-          )
-        ],
+      decoration: const BoxDecoration(
+        image: DecorationImage(
+          image: AssetImage('assets/chat_bg.png'), // Your image file
+          fit: BoxFit.cover,
+        ),
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: StreamBuilder<List<Message>>(
-              stream: _chatService.getMessages(_chat!.id),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Chat'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.exit_to_app),
+              onPressed: () async {
+                final confirm = await showEndChatDialog(context);
+                if (confirm) {
+                  await _chatService.endChat(_chat!.id);
+                  Navigator.pop(context);
                 }
-                final messages = snapshot.data!;
-                return ListView.builder(
-                  padding: const EdgeInsets.all(8),
-                  itemCount: messages.length,
-                  itemBuilder: (context, index) {
-                    final msg = messages[index];
-                    final isMe = msg.senderId == _auth.currentUser!.uid;
-                    return Align(
-                      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        margin: const EdgeInsets.symmetric(vertical: 4),
-                        decoration: BoxDecoration(
-  color: isMe ? Color(0xFFEACE9F) : Color(0xFFA77A37),
-  borderRadius: BorderRadius.circular(16),
-  border: isMe
-      ? Border.all(color: Color(0xFFA77A37), width: 2)
-      : null,
-),
-
-                        child: Text(msg.content),
-                      ),
-                    );
-                  },
-                );
               },
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    decoration: const InputDecoration(hintText: 'Type a message'),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.send),
-                  onPressed: () async {
-                    if (_controller.text.trim().isEmpty) return;
-                    await _chatService.sendMessage(_chat!.id, _controller.text.trim());
-                    _controller.clear();
-                  },
-                )
-              ],
-            ),
-          ),
-        ],
-      ),
-      ),
-    );
-  }
+          ],
+        ),
+        body: Column(
+          children: [
+            Expanded(
+              child: StreamBuilder<List<Message>>(
+                stream: _chatService.getMessages(_chat!.id),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  final messages = snapshot.data!;
+                  return ListView.builder(
+                    padding: const EdgeInsets.all(8),
+                    itemCount: messages.length,
+                    itemBuilder: (context, index) {
+                      final msg = messages[index];
+                      final isMe = msg.senderId == _auth.currentUser!.uid;
+                      return Align(
+                        alignment:
+                            isMe ? Alignment.centerRight : Alignment.centerLeft,
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          margin: const EdgeInsets.symmetric(vertical: 4),
+                          decoration: BoxDecoration(
+                            color: isMe ? Color(0xFFEACE9F) : Color(0xFFA77A37),
+                            borderRadius: BorderRadius.circular(16),
+                            border:
+                                isMe
+                                    ? Border.all(
+                                      color: Color(0xFFA77A37),
+                                      width: 2,
+                                    )
+                                    : null,
+                          ),
 
-  Widget _buildAgentChatList() {
-  final currentUser = FirebaseAuth.instance.currentUser;
-
-  if (currentUser == null) {
-    return const Scaffold(body: Center(child: CircularProgressIndicator()));
-  }
-
-  return Scaffold(
-    appBar: AppBar(title: const Text('Chats')),
-    body: StreamBuilder<List<Chat>>(
-      stream: _chatService.getAssignedChats(currentUser.uid),
-      builder: (context, assignedSnapshot) {
-        if (!assignedSnapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        final assignedChats = assignedSnapshot.data!;
-        if (assignedChats.isNotEmpty) {
-          // ✅ Show only the currently assigned chat
-          final chat = assignedChats.first;
-          return ListView(
-            children: [
-              ListTile(
-                title: Text(chat.role),
-                subtitle: const Text('Assigned to you'),
-                trailing: const Icon(Icons.chat),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ChatPageAssigned(chatId: chat.id),
-                    ),
-                  );
-                },
-              )
-            ],
-          );
-        } else {
-          // ✅ Show unassigned chats
-          return StreamBuilder<List<Chat>>(
-            stream: _chatService.getUnassignedChats(),
-            builder: (context, unassignedSnapshot) {
-              if (!unassignedSnapshot.hasData) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              final unassignedChats = unassignedSnapshot.data!;
-              return ListView.builder(
-                itemCount: unassignedChats.length,
-                itemBuilder: (context, index) {
-                  final chat = unassignedChats[index];
-                  return ListTile(
-                    title: Text(chat.role),
-                    subtitle: const Text('Tap to assign and respond'),
-                    trailing: const Icon(Icons.chat_bubble_outline),
-                    onTap: () async {
-                      await _chatService.assignAgentToChat(chat.id);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ChatPageAssigned(chatId: chat.id),
+                          child: Text(msg.content),
                         ),
                       );
                     },
                   );
                 },
-              );
-            },
-          );
-        }
-      },
-    ),
-  );
-}
-void _showChatEndedPopup() {
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (context) => AlertDialog(
-      title: Text('Chat Ended'),
-      content: Text('This chat has been ended by the admin.'),
-      actions: [
-        TextButton(
-          onPressed: () {
-            Navigator.of(context).pop(); // close dialog
-            String targetRoute = '/home';
-            if (_role == 'Citizen') targetRoute = '/citizenHome';
-            if (_role == 'Advertiser') targetRoute = '/advertiserHome';
-            
-            Navigator.of(context).pushReplacementNamed(targetRoute);
-          },
-          child: Text('OK'),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _controller,
+                      decoration: const InputDecoration(
+                        hintText: 'Type a message',
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.send),
+                    onPressed: () async {
+                      if (_controller.text.trim().isEmpty) return;
+                      await _chatService.sendMessage(
+                        _chat!.id,
+                        _controller.text.trim(),
+                      );
+                      _controller.clear();
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-      ],
-    ),
-  );
-}
+      ),
+    );
+  }
 
-Stream<DocumentSnapshot> _getChatStream(String chatId) {
-  return FirebaseFirestore.instance.collection('chats').doc(chatId).snapshots();
-}
+  Widget _buildAgentChatList() {
+    final currentUser = FirebaseAuth.instance.currentUser;
 
+    if (currentUser == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Chats')),
+      body: StreamBuilder<List<Chat>>(
+        stream: _chatService.getAssignedChats(_auth.currentUser?.uid ?? ''),
+        builder: (context, assignedSnapshot) {
+          if (!assignedSnapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final assignedChats = assignedSnapshot.data!;
+          if (assignedChats.isNotEmpty) {
+            // ✅ Show only the currently assigned chat
+            final chat = assignedChats.first;
+            return ListView(
+              children: [
+                ListTile(
+                  title: Text(chat.role),
+                  subtitle: const Text('Assigned to you'),
+                  trailing: const Icon(Icons.chat),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ChatPageAssigned(chatId: chat.id),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            );
+          } else {
+            // ✅ Show unassigned chats
+            return StreamBuilder<List<Chat>>(
+              stream: _chatService.getUnassignedChats(),
+              builder: (context, unassignedSnapshot) {
+                if (!unassignedSnapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                final unassignedChats = unassignedSnapshot.data!;
+                return ListView.builder(
+                  itemCount: unassignedChats.length,
+                  itemBuilder: (context, index) {
+                    final chat = unassignedChats[index];
+                    return ListTile(
+                      title: Text(chat.role),
+                      subtitle: const Text('Tap to assign and respond'),
+                      trailing: const Icon(Icons.chat_bubble_outline),
+                      onTap: () async {
+                        await _chatService.assignAgentToChat(chat.id);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ChatPageAssigned(chatId: chat.id),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                );
+              },
+            );
+          }
+        },
+      ),
+    );
+  }
+
+  void _showChatEndedPopup() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (context) => AlertDialog(
+            title: Text('Chat Ended'),
+            content: Text('This chat has been ended by the admin.'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // close dialog
+                  String targetRoute = '/home';
+                  if (_role == 'Citizen') targetRoute = '/citizenHome';
+                  if (_role == 'Advertiser') targetRoute = '/advertiserHome';
+
+                  Navigator.of(context).pushReplacementNamed(targetRoute);
+                },
+                child: Text('OK'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  Stream<DocumentSnapshot> _getChatStream(String chatId) {
+    return FirebaseFirestore.instance
+        .collection('chats')
+        .doc(chatId)
+        .snapshots();
+  }
 }
 
 class ChatPageAssigned extends StatefulWidget {
@@ -270,140 +286,158 @@ class _ChatPageAssignedState extends State<ChatPageAssigned> {
 
   @override
   Widget build(BuildContext context) {
-      return Container(
-    decoration: const BoxDecoration(
-      image: DecorationImage(
-        image: AssetImage('assets/chat_bg.png'),
-        fit: BoxFit.cover,
+    return Container(
+      decoration: const BoxDecoration(
+        image: DecorationImage(
+          image: AssetImage('assets/chat_bg.png'),
+          fit: BoxFit.cover,
+        ),
       ),
-    ),
-    child: Scaffold(
-      backgroundColor: Colors.transparent,
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
 
-      appBar: AppBar(
-        title: const Text('Chat'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.exit_to_app),
-            onPressed: () async {
-              final confirm = await showEndChatDialog(context);
-              if (confirm) {
-                await _chatService.endChat(widget.chatId);
-                Navigator.pop(context);
-              }
-            },
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: StreamBuilder<List<Message>>(
-              stream: _chatService.getMessages(widget.chatId),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-                final messages = snapshot.data!;
-                return ListView.builder(
-                  itemCount: messages.length,
-                  itemBuilder: (context, i) {
-                    final msg = messages[i];
-                    final isMe = msg.senderId == FirebaseAuth.instance.currentUser!.uid;
-                    return Align(
-                      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        margin: const EdgeInsets.symmetric(vertical: 4),
-                        decoration: BoxDecoration(
-  color: isMe ? Color(0xFFEACE9F) : Color(0xFFA77A37),
-  borderRadius: BorderRadius.circular(16),
-  border: isMe
-      ? Border.all(color: Color(0xFFA77A37), width: 2)
-      : null,
-),
-
-                        child: Text(msg.content),
-                      ),
-                    );
-                  },
-                );
+        appBar: AppBar(
+          title: const Text('Chat'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.exit_to_app),
+              onPressed: () async {
+                final confirm = await showEndChatDialog(context);
+                if (confirm) {
+                  await _chatService.endChat(widget.chatId);
+                  Navigator.pop(context);
+                }
               },
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    decoration: const InputDecoration(hintText: 'Type a message'),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.send),
-                  onPressed: () async {
-                    if (_controller.text.trim().isEmpty) return;
-                    await _chatService.sendMessage(widget.chatId, _controller.text.trim());
-                    _controller.clear();
-                  },
-                ),
-              ],
+          ],
+        ),
+        body: Column(
+          children: [
+            Expanded(
+              child: StreamBuilder<List<Message>>(
+                stream: _chatService.getMessages(widget.chatId),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData)
+                    return const Center(child: CircularProgressIndicator());
+                  final messages = snapshot.data!;
+                  return ListView.builder(
+                    itemCount: messages.length,
+                    itemBuilder: (context, i) {
+                      final msg = messages[i];
+                      final isMe =
+                          msg.senderId ==
+                          FirebaseAuth.instance.currentUser!.uid;
+                      return Align(
+                        alignment:
+                            isMe ? Alignment.centerRight : Alignment.centerLeft,
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          margin: const EdgeInsets.symmetric(vertical: 4),
+                          decoration: BoxDecoration(
+                            color: isMe ? Color(0xFFEACE9F) : Color(0xFFA77A37),
+                            borderRadius: BorderRadius.circular(16),
+                            border:
+                                isMe
+                                    ? Border.all(
+                                      color: Color(0xFFA77A37),
+                                      width: 2,
+                                    )
+                                    : null,
+                          ),
+
+                          child: Text(msg.content),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _controller,
+                      decoration: const InputDecoration(
+                        hintText: 'Type a message',
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.send),
+                    onPressed: () async {
+                      if (_controller.text.trim().isEmpty) return;
+                      await _chatService.sendMessage(
+                        widget.chatId,
+                        _controller.text.trim(),
+                      );
+                      _controller.clear();
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
-    ),
     );
   }
-void _showChatEndedPopup() {
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (context) => AlertDialog(
-      title: Text('Chat Ended'),
-      content: Text('This chat has been ended by the user.'),
-      actions: [
-        TextButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-            Navigator.of(context).pushReplacementNamed('/govHome');
-          },
-          child: Text('OK'),
-        ),
-      ],
-    ),
-  );
-}
+
+  void _showChatEndedPopup() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (context) => AlertDialog(
+            title: Text('Chat Ended'),
+            content: Text('This chat has been ended by the user.'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).pushReplacementNamed('/govHome');
+                },
+                child: Text('OK'),
+              ),
+            ],
+          ),
+    );
+  }
+
   @override
-void initState() {
-  super.initState();
-  FirebaseFirestore.instance
-      .collection('chats')
-      .doc(widget.chatId)
-      .snapshots()
-      .listen((doc) {
-    if (doc.exists && doc['isEnded'] == true && mounted) {
-      _showChatEndedPopup();
-    }
-  });
-}
+  void initState() {
+    super.initState();
+    FirebaseFirestore.instance
+        .collection('chats')
+        .doc(widget.chatId)
+        .snapshots()
+        .listen((doc) {
+          if (doc.exists && doc['isEnded'] == true && mounted) {
+            _showChatEndedPopup();
+          }
+        });
+  }
 }
 
 Future<bool> showEndChatDialog(BuildContext context) async {
   return await showDialog<bool>(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: Text('End this chat?'),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: Text('Cancel'),
-        ),
-        TextButton(
-          onPressed: () => Navigator.pop(context, true),
-          child: Text('End'),
-        ),
-      ],
-    ),
-  ) ?? false;
+        context: context,
+        builder:
+            (context) => AlertDialog(
+              title: Text('End this chat?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: Text('End'),
+                ),
+              ],
+            ),
+      ) ??
+      false;
 }
