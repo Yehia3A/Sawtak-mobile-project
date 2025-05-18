@@ -9,6 +9,10 @@ import 'src/screens/auth_wrapper.dart';
 import 'src/screens/welcome_page.dart';
 import 'src/screens/login_screen.dart';
 import 'src/screens/signup_screen.dart';
+import 'src/citizen/profile_citizen.dart';
+import 'src/gov/profile_gov_admin.dart';
+import 'src/advertiser/profile_advertiser.dart';
+import 'src/account/edit_account_page.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -59,6 +63,26 @@ class MyApp extends StatelessWidget {
             case '/chat':
               return MaterialPageRoute(
                 builder: (_) => const ChatPage(),
+                settings: settings,
+              );
+            case '/profile_citizen':
+              return MaterialPageRoute(
+                builder: (_) => CitizenProfile(),
+                settings: settings,
+              );
+            case '/profile_gov_admin':
+              return MaterialPageRoute(
+                builder: (_) => GovAdminProfile(),
+                settings: settings,
+              );
+            case '/profile_advertiser':
+              return MaterialPageRoute(
+                builder: (_) => ProfileAdvertiser(),
+                settings: settings,
+              );
+            case '/edit_account':
+              return MaterialPageRoute(
+                builder: (_) => const EditAccountPage(),
                 settings: settings,
               );
             default:

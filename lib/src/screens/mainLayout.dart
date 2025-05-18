@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:gov_citizen_app/src/advertiser/profile_advertiser.dart';
+import 'package:gov_citizen_app/src/citizen/profile_citizen.dart';
+import 'package:gov_citizen_app/src/gov/home_gov.dart';
+import 'package:gov_citizen_app/src/gov/profile_gov_admin.dart';
 import 'package:gov_citizen_app/src/widgets/top_nav_bar.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
 import '../widgets/floating_top_bar.dart';
@@ -37,29 +41,40 @@ class _MainLayoutState extends State<MainLayout> {
     _initializePages();
   }
 
-  void _initializePages() {
-    if (widget.role == 'Advertiser') {
-      _pages = [
-        const HomeAdvertiser(),
-        CheckAdsScreen(),
-        const Placeholder(), // Views Analytics
-        const Placeholder(), // Profile
-      ];
-    } else {
-      _pages = widget.pages;
-    }
+void _initializePages() {
+  if (widget.role == 'Gov Admin') {
+    _pages = [
+      const HomeGovernment(),
+      const Placeholder(), // Other page (e.g., Check Reports)
+      ChatPage(),
+      GovAdminProfile(),
+    ];
+  } else if (widget.role == 'Advertiser') {
+    _pages = [
+      const HomeAdvertiser(),
+      CheckAdsScreen(),
+      ChatPage(),
+      ProfileAdvertiser(),
+    ];
+  } else {
+    _pages = [
+      const HomeCitizen(),
+      const Placeholder(),
+      ChatPage(),
+      CitizenProfile(),
+    ];
   }
+}
 
   void _onTabTapped(int index) {
-    // If the user is a Citizen and taps the 'Massage the Government' button (index 2), open the chat page
-    if ((widget.role == 'Citizen' || widget.role == 'Gov Admin') && index == 2) {
-      Navigator.pushNamed(context, '/chat');
-      return;
-    }
-    setState(() {
-      _currentIndex = index;
-    });
+  if (index < 0 || index >= _pages.length) {
+    debugPrint('Invalid index tapped: $index');
+    return;
   }
+  setState(() {
+    _currentIndex = index;
+  });
+}
 
   @override
   Widget build(BuildContext context) {
