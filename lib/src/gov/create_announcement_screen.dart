@@ -15,6 +15,7 @@ import 'package:flutter/foundation.dart'
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' as latlng;
 import 'package:geocoding/geocoding.dart';
+import '../data/egypt_locations.dart';
 
 class CreateAnnouncementScreen extends StatefulWidget {
   const CreateAnnouncementScreen({super.key});
@@ -27,10 +28,48 @@ class CreateAnnouncementScreen extends StatefulWidget {
 class _CreateAnnouncementScreenState extends State<CreateAnnouncementScreen> {
   final _descController = TextEditingController();
   DateTime? _selectedDate;
-  String _location = 'Kothrud, Pune, 411038';
+  String _location = '';
   bool _isLoading = false;
   List<Attachment> _attachments = [];
-  LatLng? _selectedLocation;
+  String? _selectedCity;
+  String? _selectedArea;
+  List<String> _availableAreas = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeLocations();
+  }
+
+  void _initializeLocations() {
+    if (_selectedCity != null) {
+      _availableAreas = getAreasForCity(_selectedCity!);
+    }
+  }
+
+  void _onCityChanged(String? newCity) {
+    setState(() {
+      _selectedCity = newCity;
+      _availableAreas = newCity != null ? getAreasForCity(newCity) : [];
+      _selectedArea = null; // Reset area when city changes
+      _updateLocation();
+    });
+  }
+
+  void _onAreaChanged(String? newArea) {
+    setState(() {
+      _selectedArea = newArea;
+      _updateLocation();
+    });
+  }
+
+  void _updateLocation() {
+    if (_selectedCity != null && _selectedArea != null) {
+      setState(() {
+        _location = '$_selectedCity, $_selectedArea';
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -50,56 +89,72 @@ class _CreateAnnouncementScreenState extends State<CreateAnnouncementScreen> {
     }
   }
 
-  Future<void> _setHumanReadableLocation(LatLng latLng) async {
-    try {
-      List<Placemark> placemarks = await placemarkFromCoordinates(
-        latLng.latitude,
-        latLng.longitude,
-      );
-      if (placemarks.isNotEmpty) {
-        final place = placemarks.first;
-        setState(() {
-          _location = [
-            if (place.name != null && place.name!.isNotEmpty) place.name,
-            if (place.locality != null && place.locality!.isNotEmpty)
-              place.locality,
-            if (place.administrativeArea != null &&
-                place.administrativeArea!.isNotEmpty)
-              place.administrativeArea,
-            if (place.country != null && place.country!.isNotEmpty)
-              place.country,
-          ].where((e) => e != null && e.isNotEmpty).join(', ');
-        });
-      } else {
-        setState(() {
-          _location = 'Lat: ${latLng.latitude}, Lng: ${latLng.longitude}';
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _location = 'Lat: ${latLng.latitude}, Lng: ${latLng.longitude}';
-      });
-    }
-  }
-
   Future<void> _changeLocation() async {
-    final selectedLocation = await showDialog<latlng.LatLng>(
+    await showDialog(
       context: context,
       builder:
-          (context) => FlutterMapLocationPickerDialog(
-            initialLocation:
-                _selectedLocation ??
-                latlng.LatLng(24.7136, 46.6753), // Default to Riyadh
+          (context) => AlertDialog(
+            title: const Text('Select Location'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // City Dropdown
+                DropdownButtonFormField<String>(
+                  value: _selectedCity,
+                  hint: const Text('Select City'),
+                  isExpanded: true,
+                  items:
+                      getAllCities()
+                          .map(
+                            (city) => DropdownMenuItem(
+                              value: city,
+                              child: Text(city),
+                            ),
+                          )
+                          .toList(),
+                  onChanged: _onCityChanged,
+                ),
+                const SizedBox(height: 16),
+                // Area Dropdown
+                DropdownButtonFormField<String>(
+                  value: _selectedArea,
+                  hint: const Text('Select Area'),
+                  isExpanded: true,
+                  items:
+                      _availableAreas
+                          .map(
+                            (area) => DropdownMenuItem(
+                              value: area,
+                              child: Text(area),
+                            ),
+                          )
+                          .toList(),
+                  onChanged: _onAreaChanged,
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  if (_selectedCity != null && _selectedArea != null) {
+                    Navigator.pop(context);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Please select both city and area'),
+                      ),
+                    );
+                  }
+                },
+                child: const Text('Select'),
+              ),
+            ],
           ),
     );
-    if (selectedLocation != null) {
-      setState(() {
-        _selectedLocation = selectedLocation;
-      });
-      await _setHumanReadableLocation(
-        LatLng(selectedLocation.latitude, selectedLocation.longitude),
-      );
-    }
   }
 
   Future<void> _pickAttachment(String type) async {
@@ -317,7 +372,9 @@ class _CreateAnnouncementScreenState extends State<CreateAnnouncementScreen> {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                _location,
+                                _location.isEmpty
+                                    ? 'Select a location'
+                                    : _location,
                                 style: const TextStyle(fontSize: 16),
                               ),
                             ),

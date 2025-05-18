@@ -5,6 +5,8 @@ import '../widgets/floating_top_bar.dart';
 import '../services/user.serivce.dart';
 import '../advertiser/home_advertiser.dart';
 import '../screens/check_ads_screen.dart';
+import '../screens/chat_page.dart';
+import '../citizen/home_citizen.dart';
 
 class MainLayout extends StatefulWidget {
   final List<Widget> pages;
@@ -48,6 +50,11 @@ class _MainLayoutState extends State<MainLayout> {
   }
 
   void _onTabTapped(int index) {
+    // If the user is a Citizen and taps the 'Massage the Government' button (index 2), open the chat page
+    if (widget.role == 'Citizen' && index == 2) {
+      Navigator.pushNamed(context, '/chat');
+      return;
+    }
     setState(() {
       _currentIndex = index;
     });
@@ -80,7 +87,7 @@ class _MainLayoutState extends State<MainLayout> {
                               snapshot.hasData)
                           ? snapshot.data!
                           : '';
-                  return FloatingTopBar(userName: name);
+                  return FloatingTopBar();
                 },
               ),
             ),
@@ -93,18 +100,6 @@ class _MainLayoutState extends State<MainLayout> {
                 currentIndex: _currentIndex,
                 onTap: _onTabTapped,
                 role: widget.role,
-              ),
-            ),
-
-            // ✅ Always show the chat button
-            Positioned(
-              right: 16,
-              bottom: 110,
-              child: FloatingActionButton(
-                heroTag: 'main-chat-fab',
-                onPressed: () => Navigator.pushNamed(context, '/chat'),
-                backgroundColor: Colors.amber,
-                child: const Icon(Icons.chat),
               ),
             ),
           ],
