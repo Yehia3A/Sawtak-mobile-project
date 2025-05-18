@@ -186,6 +186,7 @@ class CheckAdsScreen extends StatelessWidget {
                               imageUrlController.dispose();
                               linkController.dispose();
                               Navigator.of(dialogContext).pop();
+                              return;
                             },
                     child: const Text('Cancel'),
                   ),
@@ -214,6 +215,16 @@ class CheckAdsScreen extends StatelessWidget {
 
                               try {
                                 final updates = <String, dynamic>{};
+
+                                // First we initialize all fields with their current values
+                                updates['title'] = request.title;
+                                updates['description'] = request.description;
+                                updates['imageUrl'] = request.imageUrl;
+                                updates['city'] = selectedCity ?? request.city;
+                                updates['area'] = selectedArea ?? request.area;
+                                updates['link'] = request.link;
+
+                                // Then we override ONLY the fields that have new values
                                 if (titleController.text.isNotEmpty) {
                                   updates['title'] = titleController.text;
                                 }
@@ -224,24 +235,14 @@ class CheckAdsScreen extends StatelessWidget {
                                 if (imageUrlController.text.isNotEmpty) {
                                   updates['imageUrl'] = imageUrlController.text;
                                 }
-                                if (selectedCity != request.city) {
-                                  updates['city'] = selectedCity;
-                                  // If city changed, area must be updated too
-                                  updates['area'] = selectedArea;
-                                } else if (selectedArea != request.area) {
-                                  // If only area changed
-                                  updates['area'] = selectedArea;
-                                }
                                 if (linkController.text.isNotEmpty) {
                                   updates['link'] = linkController.text;
                                 }
 
-                                if (updates.isNotEmpty) {
-                                  await _adService.updateRequest(
-                                    request.id,
-                                    updates,
-                                  );
-                                }
+                                await _adService.updateRequest(
+                                  request.id,
+                                  updates,
+                                );
 
                                 // Clean up controllers
                                 titleController.dispose();
