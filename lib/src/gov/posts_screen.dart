@@ -87,6 +87,7 @@ class _GovPostsScreenState extends State<GovPostsScreen> {
                           }
                         }
                         : null,
+                userRole: widget.userRole,
               );
             },
           );

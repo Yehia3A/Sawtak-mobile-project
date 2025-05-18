@@ -1,26 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'posts_screen.dart';
+import '../services/user.serivce.dart';
 
 class HomeCitizen extends StatelessWidget {
   const HomeCitizen({super.key});
 
   // Dummy announcements data
-  final List<Map<String, String>> _announcements = const [
-    {
-      'author': 'Pravin Rao',
-      'date': '21-01-25',
-      'image': 'assets/free_meals_banner1.jpg',
-      'text':
-          '🍲 Free Meals Available for Those in Need\nIf you or someone you know needs a warm meal, our community kitchen at "GR3G+6FF, Bharati-katunj -2, Erandwane, Pune, Maharashtra 411004" is serving free lunch from 12 PM – 3 PM today. No registration needed—just come by! ❤️',
-    },
-    {
-      'author': 'Rajesh Deshmukh',
-      'date': '19-01-25',
-      'image': 'assets/free_meals_banner2.jpg',
-      'text':
-          '🍲 Free Meals Available for Those in Need\nIf you or someone you know needs a warm meal, our community kitchen at "GR3G+6FF, Bharati-katunj -2, Erandwane, Pune, Maharashtra 411004" is serving free lunch from 12 PM – 3 PM today. No registration needed—just come by! ❤️',
-    },
-  ];
+  final List<Map<String, String>> _announcements = const [];
 
   @override
   Widget build(BuildContext context) {
@@ -67,8 +54,6 @@ class HomeCitizen extends StatelessWidget {
           SafeArea(
             child: Column(
               children: [
-                // Modern top bar with gradient and rounded corners
-
                 // Search-style prompt box
                 Padding(
                   padding: const EdgeInsets.symmetric(
@@ -93,79 +78,49 @@ class HomeCitizen extends StatelessWidget {
                     ),
                   ),
                 ),
-                // Announcements list (scrollable)
+                // Posts Section
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Recent Posts',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          // Show all posts
+                        },
+                        child: const Text(
+                          'See All',
+                          style: TextStyle(color: Colors.blue),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Posts List
                 Expanded(
-                  child: ListView.separated(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: _announcements.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 16),
-                    itemBuilder: (context, i) {
-                      final ann = _announcements[i];
-                      return Card(
-                        color: Colors.black.withOpacity(0.5),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // header row: author, date, menu icon
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    ann['author']!,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  Text(
-                                    ann['date']!,
-                                    style: const TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  const Icon(
-                                    Icons.more_vert,
-                                    color: Colors.white,
-                                    size: 20,
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              // image banner (use your real assets here)
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: Image.asset(
-                                  // Use placeholder if the image does not exist
-                                  ann['image'] ==
-                                              'assets/free_meals_banner1.jpg' ||
-                                          ann['image'] ==
-                                              'assets/free_meals_banner2.jpg'
-                                      ? 'assets/homepage.jpg'
-                                      : ann['image']!,
-                                  fit: BoxFit.cover,
-                                  height: 140,
-                                  width: double.infinity,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              // body text
-                              Text(
-                                ann['text']!,
-                                style: const TextStyle(
-                                  color: Colors.white70,
-                                  height: 1.3,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                  child: FutureBuilder<String>(
+                    future:
+                        user != null
+                            ? UserService().fetchUserFirstName(user.uid)
+                            : Future.value('Anonymous'),
+                    builder: (context, snapshot) {
+                      final firstName =
+                          (snapshot.connectionState == ConnectionState.done &&
+                                  snapshot.hasData)
+                              ? snapshot.data!
+                              : 'Anonymous';
+                      return PostsScreen(
+                        currentUserId: user?.uid ?? '',
+                        currentUserName: firstName,
+                        userRole: 'citizen',
                       );
                     },
                   ),
@@ -173,8 +128,6 @@ class HomeCitizen extends StatelessWidget {
               ],
             ),
           ),
-
-          // Floating navbar
         ],
       ),
       floatingActionButton: FloatingActionButton(

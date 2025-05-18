@@ -26,11 +26,29 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
   final AuthService _authService = AuthService();
   bool _isAnonymous = false;
   bool _isLoading = false;
+  String? _replyingToCommentId;
+  String? _replyingToUserName;
 
   @override
   void dispose() {
     _commentController.dispose();
     super.dispose();
+  }
+
+  void _startReply(String commentId, String userName) {
+    setState(() {
+      _replyingToCommentId = commentId;
+      _replyingToUserName = userName;
+      _commentController.text = '@$userName ';
+    });
+  }
+
+  void _cancelReply() {
+    setState(() {
+      _replyingToCommentId = null;
+      _replyingToUserName = null;
+      _commentController.clear();
+    });
   }
 
   Future<void> _pickAndUploadFile() async {
@@ -86,15 +104,46 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
       final user = await _authService.getCurrentUser();
       if (user == null) throw Exception('User not logged in');
 
+      // Show confirmation dialog for anonymous posting
+      if (_isAnonymous) {
+        final confirmed = await showDialog<bool>(
+          context: context,
+          builder:
+              (context) => AlertDialog(
+                title: const Text('Post Anonymously?'),
+                content: const Text(
+                  'Are you sure you want to post this comment anonymously? This cannot be changed later.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('Cancel'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: const Text('Post Anonymously'),
+                  ),
+                ],
+              ),
+        );
+
+        if (confirmed != true) {
+          setState(() => _isLoading = false);
+          return;
+        }
+      }
+
       await _postsService.addComment(
         postId: widget.post.id,
         text: _commentController.text.trim(),
         userId: user.uid,
         userName: user.displayName ?? 'Anonymous',
         isAnonymous: _isAnonymous,
+        parentCommentId: _replyingToCommentId,
       );
 
       _commentController.clear();
+      _cancelReply();
       setState(() => _isLoading = false);
     } catch (e) {
       setState(() => _isLoading = false);
@@ -145,6 +194,78 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
                 ),
               ),
             ),
+      ),
+    );
+  }
+
+  Widget _buildCommentItem(Comment comment, {bool isReply = false}) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 16, left: isReply ? 32 : 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CircleAvatar(
+                backgroundColor: Colors.grey[300],
+                child: Text(
+                  comment.userName[0],
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          comment.isAnonymous ? 'Anonymous' : comment.userName,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          DateFormat(
+                            'MMM dd, yyyy • hh:mm a',
+                          ).format(comment.createdAt),
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(comment.text),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        TextButton(
+                          onPressed:
+                              () => _startReply(comment.id, comment.userName),
+                          child: const Text('Reply'),
+                        ),
+                        if (comment.replies.isNotEmpty)
+                          TextButton(
+                            onPressed: () {
+                              // Toggle replies visibility
+                            },
+                            child: Text('${comment.replies.length} replies'),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (comment.replies.isNotEmpty)
+            ...comment.replies.map(
+              (reply) => _buildCommentItem(reply, isReply: true),
+            ),
+        ],
       ),
     );
   }
@@ -295,15 +416,10 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      ...widget.post.comments.map((comment) {
-                        return _buildCommentItem(
-                          comment.userName,
-                          comment.text,
-                          DateFormat(
-                            'MMM dd, yyyy • hh:mm a',
-                          ).format(comment.createdAt),
-                        );
-                      }).toList(),
+                      ...widget.post.comments
+                          .where((comment) => comment.parentCommentId == null)
+                          .map((comment) => _buildCommentItem(comment))
+                          .toList(),
                     ],
                   ),
                 ),
@@ -333,6 +449,31 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (_replyingToCommentId != null)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Replying to $_replyingToUserName',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: _cancelReply,
+                    ),
+                  ],
+                ),
+              ),
             Row(
               children: [
                 Checkbox(
@@ -342,6 +483,32 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
                   },
                 ),
                 const Text('Post as Anonymous'),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.help_outline),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder:
+                          (context) => AlertDialog(
+                            title: const Text('Anonymous Posting'),
+                            content: const Text(
+                              'When posting anonymously:\n\n'
+                              '• Your name will be hidden\n'
+                              '• Your comment cannot be edited later\n'
+                              '• You can still delete your comment\n'
+                              '• Your identity is still recorded for moderation',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text('Got it'),
+                              ),
+                            ],
+                          ),
+                    );
+                  },
+                ),
               ],
             ),
             Row(
@@ -350,7 +517,10 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
                   child: TextField(
                     controller: _commentController,
                     decoration: InputDecoration(
-                      hintText: 'Add a comment...',
+                      hintText:
+                          _replyingToCommentId != null
+                              ? 'Write a reply...'
+                              : 'Add a comment...',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(24),
                         borderSide: BorderSide.none,
@@ -408,44 +578,6 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildCommentItem(String name, String comment, String time) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          CircleAvatar(
-            backgroundColor: Colors.grey[300],
-            child: Text(name[0], style: const TextStyle(color: Colors.white)),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      name,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      time,
-                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(comment),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
