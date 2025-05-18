@@ -142,8 +142,8 @@ class _NavBarButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final labelColor =
         selected
-            ? const Color(0xFFFFC107)
-            : const Color.fromARGB(255, 89, 88, 88);
+            ? const Color(0xFFFFB300) // Vibrant gold
+            : const Color(0xCCFFFFFF); // Soft white with transparency
     return GestureDetector(
       onTap: onTap,
       child: Column(
@@ -153,32 +153,75 @@ class _NavBarButton extends StatelessWidget {
               ? Container(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFFFFC107),
+                  color: const Color(0xFFFFB300),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.15),
-                      blurRadius: 8,
+                      color: Colors.black.withOpacity(0.18),
+                      blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
                   ],
                 ),
                 padding: const EdgeInsets.all(8),
-                child: SvgPicture.asset(assetPath, width: 24, height: 24),
+                child: SvgPicture.asset(assetPath, width: 26, height: 26),
               )
               : SvgPicture.asset(assetPath, width: 24, height: 24),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: labelColor,
-              fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-              fontSize: 11,
-              decoration: TextDecoration.none,
-            ),
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
+          const SizedBox(height: 6),
+          selected
+              ? Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFFE082), Color(0xFFFFB300)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.10),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    color: Colors.brown[900],
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                    letterSpacing: 1.2,
+                    fontFamily: 'Montserrat', // Use a rounded font if available
+                    shadows: [
+                      Shadow(
+                        color: Colors.black.withOpacity(0.13),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              )
+              : Text(
+                label,
+                style: TextStyle(
+                  color: labelColor,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                  letterSpacing: 1.1,
+                  fontFamily: 'Montserrat',
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
         ],
       ),
     );
@@ -191,10 +234,7 @@ class _NavBarBackgroundPainter extends CustomPainter {
     final paint =
         Paint()
           ..shader = const LinearGradient(
-            colors: [
-              Color.fromARGB(255, 219, 218, 218),
-              Color.fromARGB(255, 193, 83, 75),
-            ],
+            colors: [Color(0xFF795003), Color(0xFFDF9306)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));

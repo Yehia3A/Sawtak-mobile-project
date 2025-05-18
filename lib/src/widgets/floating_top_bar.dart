@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 import '../services/auth.service.dart';
 
-class FloatingTopBar extends StatelessWidget {
-  final String userName;
+class FloatingTopBar extends StatefulWidget {
   final VoidCallback? onNotifications;
 
-  const FloatingTopBar({super.key, this.userName = '', this.onNotifications});
+  const FloatingTopBar({super.key, this.onNotifications});
+
+  @override
+  State<FloatingTopBar> createState() => _FloatingTopBarState();
+}
+
+class _FloatingTopBarState extends State<FloatingTopBar> {
+  Offset position = const Offset(0, 0);
 
   Future<void> _handleLogout(BuildContext context) async {
     try {
@@ -24,19 +30,24 @@ class FloatingTopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Align(
-        alignment: Alignment.topCenter,
-        child: Padding(
-          padding: const EdgeInsets.only(top: 16),
+    return Positioned(
+      top: position.dy == 0 ? 16 : position.dy,
+      left:
+          position.dx == 0
+              ? MediaQuery.of(context).size.width / 2 - 120
+              : position.dx,
+      child: GestureDetector(
+        onPanUpdate: (details) {
+          setState(() {
+            position += details.delta;
+          });
+        },
+        child: SafeArea(
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [
-                  Color.fromARGB(255, 219, 218, 218),
-                  Color.fromARGB(255, 193, 83, 75),
-                ],
+                colors: [Color(0xFF795003), Color(0xFFDF9306)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -45,7 +56,7 @@ class FloatingTopBar extends StatelessWidget {
                 BoxShadow(
                   color: Colors.black.withOpacity(0.2),
                   blurRadius: 12,
-                  offset: Offset(0, 4),
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
@@ -59,18 +70,8 @@ class FloatingTopBar extends StatelessWidget {
                     color: Colors.white,
                     size: 28,
                   ),
-                  onPressed: onNotifications,
+                  onPressed: widget.onNotifications,
                   tooltip: 'Notifications',
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  userName.isNotEmpty ? 'Welcome, $userName' : 'Welcome',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
-                  ),
                 ),
                 const SizedBox(width: 12),
                 IconButton(
