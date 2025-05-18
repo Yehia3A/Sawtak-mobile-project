@@ -125,6 +125,8 @@ class PostsService {
     required String userId,
     required String userName,
     required bool isAnonymous,
+    String? parentCommentId,
+    String? userProfileImage,
   }) async {
     try {
       final comment = Comment(
@@ -134,11 +136,44 @@ class PostsService {
         userName: isAnonymous ? 'Anonymous' : userName,
         isAnonymous: isAnonymous,
         createdAt: DateTime.now(),
+        parentCommentId: parentCommentId,
+        userProfileImage: isAnonymous ? null : userProfileImage,
       );
 
-      await _firestore.collection(_postsCollection).doc(postId).update({
-        'comments': FieldValue.arrayUnion([comment.toMap()]),
-      });
+      if (parentCommentId == null) {
+        // Add as a top-level comment
+        await _firestore.collection(_postsCollection).doc(postId).update({
+          'comments': FieldValue.arrayUnion([comment.toMap()]),
+        });
+      } else {
+        // Add as a reply to an existing comment
+        final postDoc =
+            await _firestore.collection(_postsCollection).doc(postId).get();
+        if (!postDoc.exists) {
+          throw Exception('Post not found');
+        }
+
+        final comments = List<Map<String, dynamic>>.from(
+          postDoc.data()!['comments'] ?? [],
+        );
+        final parentCommentIndex = comments.indexWhere(
+          (c) => c['id'] == parentCommentId,
+        );
+
+        if (parentCommentIndex == -1) {
+          throw Exception('Parent comment not found');
+        }
+
+        // Add the reply to the parent comment's replies array
+        if (comments[parentCommentIndex]['replies'] == null) {
+          comments[parentCommentIndex]['replies'] = [];
+        }
+        comments[parentCommentIndex]['replies'].add(comment.toMap());
+
+        await _firestore.collection(_postsCollection).doc(postId).update({
+          'comments': comments,
+        });
+      }
     } catch (e) {
       throw Exception('Failed to add comment: $e');
     }

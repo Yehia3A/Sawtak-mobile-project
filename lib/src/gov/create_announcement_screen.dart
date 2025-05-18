@@ -14,6 +14,7 @@ import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' as latlng;
+import 'package:geocoding/geocoding.dart';
 
 class CreateAnnouncementScreen extends StatefulWidget {
   const CreateAnnouncementScreen({super.key});
@@ -49,6 +50,38 @@ class _CreateAnnouncementScreenState extends State<CreateAnnouncementScreen> {
     }
   }
 
+  Future<void> _setHumanReadableLocation(LatLng latLng) async {
+    try {
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+        latLng.latitude,
+        latLng.longitude,
+      );
+      if (placemarks.isNotEmpty) {
+        final place = placemarks.first;
+        setState(() {
+          _location = [
+            if (place.name != null && place.name!.isNotEmpty) place.name,
+            if (place.locality != null && place.locality!.isNotEmpty)
+              place.locality,
+            if (place.administrativeArea != null &&
+                place.administrativeArea!.isNotEmpty)
+              place.administrativeArea,
+            if (place.country != null && place.country!.isNotEmpty)
+              place.country,
+          ].where((e) => e != null && e.isNotEmpty).join(', ');
+        });
+      } else {
+        setState(() {
+          _location = 'Lat: ${latLng.latitude}, Lng: ${latLng.longitude}';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _location = 'Lat: ${latLng.latitude}, Lng: ${latLng.longitude}';
+      });
+    }
+  }
+
   Future<void> _changeLocation() async {
     final selectedLocation = await showDialog<latlng.LatLng>(
       context: context,
@@ -62,9 +95,10 @@ class _CreateAnnouncementScreenState extends State<CreateAnnouncementScreen> {
     if (selectedLocation != null) {
       setState(() {
         _selectedLocation = selectedLocation;
-        _location =
-            'Lat: ${selectedLocation.latitude}, Lng: ${selectedLocation.longitude}';
       });
+      await _setHumanReadableLocation(
+        LatLng(selectedLocation.latitude, selectedLocation.longitude),
+      );
     }
   }
 
@@ -98,6 +132,15 @@ class _CreateAnnouncementScreenState extends State<CreateAnnouncementScreen> {
               ),
             );
           });
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Image "${pickedFile.name}" uploaded successfully',
+                ),
+              ),
+            );
+          }
         }
       } else if (type == 'PDF') {
         final result = await FilePicker.platform.pickFiles(
@@ -125,6 +168,13 @@ class _CreateAnnouncementScreenState extends State<CreateAnnouncementScreen> {
               ),
             );
           });
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('PDF "${file.name}" uploaded successfully'),
+              ),
+            );
+          }
         }
       }
     } catch (e) {
@@ -272,7 +322,7 @@ class _CreateAnnouncementScreenState extends State<CreateAnnouncementScreen> {
                               ),
                             ),
                             TextButton(
-                              onPressed: _isLoading ? null : _changeLocation,
+                              onPressed: _changeLocation,
                               child: const Text(
                                 'Change',
                                 style: TextStyle(color: Colors.red),
@@ -415,6 +465,24 @@ class FlutterMapLocationPickerDialog extends StatefulWidget {
 class _FlutterMapLocationPickerDialogState
     extends State<FlutterMapLocationPickerDialog> {
   late latlng.LatLng _selectedLocation;
+  final MapController _mapController = MapController();
+
+  Future<void> _findMyLocation() async {
+    try {
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+      final newLocation = latlng.LatLng(position.latitude, position.longitude);
+      setState(() {
+        _selectedLocation = newLocation;
+      });
+      _mapController.move(newLocation, 13.0);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not get current location: $e')),
+      );
+    }
+  }
 
   @override
   void initState() {
@@ -436,10 +504,22 @@ class _FlutterMapLocationPickerDialogState
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: _findMyLocation,
+                  icon: const Icon(Icons.my_location),
+                  label: const Text('Find My Location'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
             Expanded(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: FlutterMap(
+                  mapController: _mapController,
                   options: MapOptions(
                     center: _selectedLocation,
                     zoom: 13.0,

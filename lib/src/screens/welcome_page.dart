@@ -39,7 +39,7 @@ class WelcomePage extends StatelessWidget {
               const SizedBox(height: 16),
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 32),
-                child: Text('E', textAlign: TextAlign.center),
+                child: Text('', textAlign: TextAlign.center),
               ),
               const SizedBox(height: 32),
               Row(

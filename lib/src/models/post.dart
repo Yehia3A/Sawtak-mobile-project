@@ -108,6 +108,9 @@ class Comment {
   final String userName;
   final bool isAnonymous;
   final DateTime createdAt;
+  final List<Comment> replies;
+  final String? parentCommentId;
+  final String? userProfileImage;
 
   Comment({
     required this.id,
@@ -116,6 +119,9 @@ class Comment {
     required this.userName,
     required this.isAnonymous,
     required this.createdAt,
+    this.replies = const [],
+    this.parentCommentId,
+    this.userProfileImage,
   });
 
   Map<String, dynamic> toMap() {
@@ -126,6 +132,9 @@ class Comment {
       'userName': userName,
       'isAnonymous': isAnonymous,
       'createdAt': createdAt.toIso8601String(),
+      'replies': replies.map((x) => x.toMap()).toList(),
+      'parentCommentId': parentCommentId,
+      'userProfileImage': userProfileImage,
     };
   }
 
@@ -137,6 +146,13 @@ class Comment {
       userName: map['userName'] as String,
       isAnonymous: map['isAnonymous'] as bool,
       createdAt: DateTime.parse(map['createdAt'] as String),
+      replies:
+          (map['replies'] as List<dynamic>?)
+              ?.map((x) => Comment.fromMap(x as Map<String, dynamic>))
+              .toList() ??
+          [],
+      parentCommentId: map['parentCommentId'] as String?,
+      userProfileImage: map['userProfileImage'] as String?,
     );
   }
 }
@@ -159,8 +175,9 @@ class Poll extends Post {
     this.showResults = true,
     List<String>? votedUserIds,
     List<Attachment> attachments = const [],
+    List<Comment> comments = const [],
   }) : votedUserIds = votedUserIds ?? [],
-       super(type: PostType.poll, attachments: attachments);
+       super(type: PostType.poll, attachments: attachments, comments: comments);
 
   bool get isExpired => DateTime.now().isAfter(endDate);
 
@@ -181,9 +198,15 @@ class Poll extends Post {
       if (value is Timestamp) return value.toDate();
       if (value is String) return DateTime.tryParse(value) ?? DateTime.now();
       if (value is DateTime) return value;
-      print('Invalid date type: $value ([33m${value.runtimeType}[0m)');
+      print('Invalid date type: $value (${value.runtimeType})');
       return DateTime.now();
     }
+
+    final comments =
+        (data['comments'] as List<dynamic>?)
+            ?.map((x) => Comment.fromMap(x as Map<String, dynamic>))
+            .toList() ??
+        [];
 
     return Poll(
       id: doc.id,
@@ -209,6 +232,7 @@ class Poll extends Post {
               )
               .toList() ??
           [],
+      comments: comments,
     );
   }
 
