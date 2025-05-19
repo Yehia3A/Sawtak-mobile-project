@@ -18,4 +18,5 @@
   - Allows city selection and shows bar chart of report counts per area in the selected city.
   - Uses fl_chart for visualization.
   - Added analytics methods to ReportProvider.
-  - Linked AnalyticsScreen from Analytics card in home_gov.dart. 
+  - Linked AnalyticsScreen from Analytics card in home_gov.dart.
+- Emergency button in the top nav bar now shows a dropdown with emergency numbers (911, 122, 123, 125) instead of navigating to another screen. 
