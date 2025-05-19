@@ -49,7 +49,7 @@ class PostsService {
     required String content,
     required String authorId,
     required String authorName,
-    required List<String> options,
+    required List<PollOption> options,
     required String userRole,
     required DateTime endDate,
     bool showResults = true,
@@ -63,7 +63,6 @@ class PostsService {
       if (options.length < 2) {
         throw Exception('A poll must have at least 2 options');
       }
-
       if (endDate.isBefore(DateTime.now())) {
         throw Exception('End date must be in the future');
       }
@@ -75,10 +74,11 @@ class PostsService {
         authorId: authorId,
         authorName: authorName,
         createdAt: DateTime.now(),
-        options: options.map((text) => PollOption(text: text)).toList(),
+        options: options,
         endDate: endDate,
         showResults: showResults,
         attachments: attachments,
+        votedUserIds: [],
       );
 
       await _firestore
@@ -101,16 +101,15 @@ class PostsService {
         .map((snapshot) {
           return snapshot.docs
               .map((doc) {
-                final data = doc.data();
-                if (data['type'] == 'poll') {
+                final post = Post.fromFirestore(doc);
+                if (post.type == PostType.poll) {
                   final poll = Poll.fromFirestore(doc);
-                  // Show expired polls only to admins
                   if (poll.isExpired && userRole != 'gov_admin') {
                     return null;
                   }
                   return poll;
                 }
-                return Post.fromFirestore(doc);
+                return post;
               })
               .where((post) => post != null)
               .cast<Post>()
@@ -140,52 +139,45 @@ class PostsService {
         userProfileImage: isAnonymous ? null : userProfileImage,
       );
 
-      if (parentCommentId == null) {
-        // Add as a top-level comment
-        await _firestore.collection(_postsCollection).doc(postId).update({
-          'comments': FieldValue.arrayUnion([comment.toMap()]),
-        });
-      } else {
-        // Add as a reply to an existing comment
-        final postDoc =
-            await _firestore.collection(_postsCollection).doc(postId).get();
-        if (!postDoc.exists) {
-          throw Exception('Post not found');
-        }
+      final postDoc =
+          await _firestore.collection(_postsCollection).doc(postId).get();
+      if (!postDoc.exists) {
+        throw Exception('Post not found');
+      }
 
-        final comments = List<Map<String, dynamic>>.from(
-          postDoc.data()!['comments'] ?? [],
-        );
+      final comments = List<Map<String, dynamic>>.from(
+        postDoc.data()?['comments'] ?? [],
+      );
+      if (parentCommentId == null) {
+        comments.add(comment.toMap());
+      } else {
         final parentCommentIndex = comments.indexWhere(
           (c) => c['id'] == parentCommentId,
         );
-
         if (parentCommentIndex == -1) {
           throw Exception('Parent comment not found');
         }
-
-        // Add the reply to the parent comment's replies array
         if (comments[parentCommentIndex]['replies'] == null) {
           comments[parentCommentIndex]['replies'] = [];
         }
         comments[parentCommentIndex]['replies'].add(comment.toMap());
-
-        await _firestore.collection(_postsCollection).doc(postId).update({
-          'comments': comments,
-        });
       }
+
+      await _firestore.collection(_postsCollection).doc(postId).update({
+        'comments': comments,
+      });
     } catch (e) {
       throw Exception('Failed to add comment: $e');
     }
   }
 
   // Vote on a poll
-  Future<void> votePoll({
-    required String pollId,
+  Future<void> voteOnPoll({
+    required String postId,
     required String userId,
-    required int optionIndex,
+    required String optionText, // Changed to match PollOption.text
   }) async {
-    final pollRef = _firestore.collection(_postsCollection).doc(pollId);
+    final pollRef = _firestore.collection(_postsCollection).doc(postId);
 
     try {
       await _firestore.runTransaction((transaction) async {
@@ -195,38 +187,30 @@ class PostsService {
         }
 
         final poll = Poll.fromFirestore(pollDoc);
-
-        // Check if poll has expired
         if (poll.isExpired) {
           throw Exception('This poll has expired');
         }
 
-        // Check if user has already voted
         if (poll.votedUserIds.contains(userId)) {
           throw Exception('You have already voted on this poll');
         }
 
-        // Validate option index
-        if (optionIndex < 0 || optionIndex >= poll.options.length) {
-          throw Exception('Invalid option index');
+        final optionIndex = poll.options.indexWhere(
+          (opt) => opt.text == optionText,
+        );
+        if (optionIndex == -1) {
+          throw Exception('Invalid option');
         }
 
-        // Update the vote count for the selected option
-        final options = List<Map<String, dynamic>>.from(
-          pollDoc.data()!['options'],
+        final options = List<PollOption>.from(poll.options);
+        options[optionIndex] = PollOption(
+          text: options[optionIndex].text,
+          votes: options[optionIndex].votes + 1,
         );
-        options[optionIndex]['votes'] =
-            (options[optionIndex]['votes'] ?? 0) + 1;
+        final votedUserIds = List<String>.from(poll.votedUserIds)..add(userId);
 
-        // Add user to votedUserIds
-        final votedUserIds = List<String>.from(
-          pollDoc.data()!['votedUserIds'] ?? [],
-        );
-        votedUserIds.add(userId);
-
-        // Update the document
         transaction.update(pollRef, {
-          'options': options,
+          'options': options.map((opt) => opt.toMap()).toList(),
           'votedUserIds': votedUserIds,
         });
       });
@@ -237,12 +221,12 @@ class PostsService {
 
   // Check if a user has voted on a poll
   Future<bool> hasUserVoted({
-    required String pollId,
+    required String postId,
     required String userId,
   }) async {
     try {
       final pollDoc =
-          await _firestore.collection(_postsCollection).doc(pollId).get();
+          await _firestore.collection(_postsCollection).doc(postId).get();
       if (!pollDoc.exists) return false;
 
       final poll = Poll.fromFirestore(pollDoc);
@@ -277,13 +261,13 @@ class PostsService {
   }) async {
     try {
       final postDoc =
-      await _firestore.collection(_postsCollection).doc(postId).get();
+          await _firestore.collection(_postsCollection).doc(postId).get();
       if (!postDoc.exists) {
         throw Exception('Post not found');
       }
 
       final comments = List<Map<String, dynamic>>.from(
-        postDoc.data()!['comments'] ?? [],
+        postDoc.data()?['comments'] ?? [],
       );
       final commentIndex = comments.indexWhere((c) => c['id'] == commentId);
 
@@ -291,10 +275,11 @@ class PostsService {
         throw Exception('Comment not found');
       }
 
-      // Verify comment ownership or admin status
       final comment = comments[commentIndex];
       if (comment['userId'] != userId && userRole != 'gov_admin') {
-        throw Exception('You can only delete your own comments or you must be an admin');
+        throw Exception(
+          'You can only delete your own comments or you must be an admin',
+        );
       }
 
       comments.removeAt(commentIndex);
@@ -303,7 +288,7 @@ class PostsService {
         'comments': comments,
       });
     } catch (e) {
-      print('Error deleting comment: $e'); // Log the error
+      print('Error deleting comment: $e');
       throw Exception('Failed to delete comment: $e');
     }
   }
@@ -315,7 +300,7 @@ class PostsService {
           await _firestore.collection(_postsCollection).doc(postId).get();
       if (!doc.exists) return null;
 
-      final data = doc.data()!;
+      final data = doc.data() as Map<String, dynamic>;
       return data['type'] == 'poll'
           ? Poll.fromFirestore(doc)
           : Post.fromFirestore(doc);
@@ -365,7 +350,7 @@ class PostsService {
       }
 
       final attachments = List<Map<String, dynamic>>.from(
-        postDoc.data()!['attachments'] ?? [],
+        postDoc.data()?['attachments'] ?? [],
       );
       final attachmentIndex = attachments.indexWhere(
         (a) => a['id'] == attachmentId,

@@ -47,7 +47,7 @@ class _GovPostsScreenState extends State<GovPostsScreen> {
         stream: _postsService.getPosts(userRole: widget.userRole),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+            return Center(child: Text('Error: ${snapshot.error}'));
           }
 
           if (!snapshot.hasData) {
@@ -88,6 +88,7 @@ class _GovPostsScreenState extends State<GovPostsScreen> {
                         }
                         : null,
                 userRole: widget.userRole,
+                onTap: () {},
               );
             },
           );

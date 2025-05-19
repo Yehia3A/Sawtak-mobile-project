@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:gov_citizen_app/src/screens/posts_screen.dart';
 import '../screens/check_ads_screen.dart';
 import '../services/auth.service.dart';
 import 'create_announcement_screen.dart';
 import 'create_poll_screen.dart';
-import 'posts_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class HomeGovernment extends StatelessWidget {
@@ -124,10 +124,9 @@ class HomeGovernment extends StatelessWidget {
                               context,
                               MaterialPageRoute(
                                 builder:
-                                    (context) => GovPostsScreen(
+                                    (context) => PostsScreen(
                                       currentUserId: user.uid,
-                                      currentUserName:
-                                          user.displayName ?? 'Admin',
+                                      currentUserName: user.displayName ?? '',
                                       userRole: 'gov_admin',
                                     ),
                               ),

@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import '../services/posts.service.dart';
 import '../services/auth.service.dart';
+import '../models/post.dart';
 
 class CreatePollScreen extends StatefulWidget {
   const CreatePollScreen({super.key});
@@ -92,10 +93,12 @@ class _CreatePollScreenState extends State<CreatePollScreen> {
         throw Exception('User not logged in');
       }
 
+      // Create PollOption objects from the text input
       final options =
           _optionControllers
               .map((controller) => controller.text.trim())
               .where((text) => text.isNotEmpty)
+              .map((text) => PollOption(text: text))
               .toList();
 
       // Combine date and time

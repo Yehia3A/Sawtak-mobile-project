@@ -56,6 +56,8 @@ dependencies:
   cupertino_icons: ^1.0.8
   flutterfire_cli: ^1.2.0
   provider: ^6.1.5
+  open_filex: ^4.7.0
+  flutter_map_cancellable_tile_provider: ^2.0.0
 
 dev_dependencies:
   flutter_test:
