@@ -164,7 +164,7 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
       );
 
       final newComment = Comment(
-        id: UniqueKey().toString(), // Generate a unique ID for the comment
+        id: UniqueKey().toString(),
         text: _commentController.text.trim(),
         userId: user.uid,
         userName: userName.isNotEmpty ? userName : 'Anonymous',
@@ -184,9 +184,19 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error adding comment: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              e.toString().contains('inappropriate content')
+                  ? e.toString()
+                  : 'Error adding comment: $e',
+            ),
+            backgroundColor:
+                e.toString().contains('inappropriate content')
+                    ? Colors.red
+                    : null,
+          ),
+        );
       }
     }
   }

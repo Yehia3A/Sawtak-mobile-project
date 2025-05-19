@@ -1,10 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uuid/uuid.dart';
 import '../models/post.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class PostsService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final String _postsCollection = 'posts';
+  final String _apiUrl =
+      "https://api-inference.huggingface.co/models/cardiffnlp/twitter-roberta-base-offensive";
+  final String _apiKey = "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";
 
   // Create a new announcement (admin only)
   Future<Post> createAnnouncement({
@@ -117,6 +122,37 @@ class PostsService {
         });
   }
 
+  // Check if a comment is toxic
+  Future<bool> isCommentToxic(String text) async {
+    try {
+      final response = await http.post(
+        Uri.parse(_apiUrl),
+        headers: {
+          "Authorization": "Bearer $_apiKey",
+          "Content-Type": "application/json",
+        },
+        body: jsonEncode({"inputs": text}),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> result = jsonDecode(response.body);
+        if (result.isNotEmpty && result[0] is List) {
+          final List<dynamic> predictions = result[0];
+          for (var prediction in predictions) {
+            if (prediction['label'] == 'offensive' &&
+                prediction['score'] > 0.5) {
+              return true;
+            }
+          }
+        }
+      }
+      return false;
+    } catch (e) {
+      print('Error checking comment toxicity: $e');
+      return false;
+    }
+  }
+
   // Add a comment to a post
   Future<void> addComment({
     required String postId,
@@ -128,6 +164,14 @@ class PostsService {
     String? userProfileImage,
   }) async {
     try {
+      // Check if comment is toxic
+      final isToxic = await isCommentToxic(text);
+      if (isToxic) {
+        throw Exception(
+          'Your comment contains inappropriate content. Please revise and try again.',
+        );
+      }
+
       final comment = Comment(
         id: const Uuid().v4(),
         text: text,
