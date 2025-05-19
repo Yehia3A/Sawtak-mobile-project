@@ -340,6 +340,7 @@ class _HomeAdvertiserState extends State<HomeAdvertiser> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Navigator.pushNamed(context, '/check_ads'),
+        heroTag: 'advertiser_check_ads_fab',
         icon: const Icon(Icons.list),
         label: const Text('Your Ads'),
         backgroundColor: Colors.amber,

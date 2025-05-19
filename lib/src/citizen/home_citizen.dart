@@ -118,11 +118,6 @@ class HomeCitizen extends StatelessWidget {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.pushNamed(context, '/chat'),
-        child: const Icon(Icons.chat),
-        backgroundColor: Colors.amber,
-      ),
     );
   }
 

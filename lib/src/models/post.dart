@@ -1,5 +1,22 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+DateTime parseFirestoreDate(dynamic value) {
+  if (value == null) return DateTime.now();
+  if (value is Timestamp) return value.toDate();
+  if (value is Map) {
+    if (value['_seconds'] != null) {
+      return Timestamp(value['_seconds'], value['_nanoseconds'] ?? 0).toDate();
+    }
+  }
+  if (value is String) {
+    final timestamp = DateTime.tryParse(value);
+    if (timestamp != null) return timestamp;
+  }
+  if (value is DateTime) return value;
+  print('Invalid date type: $value (${value.runtimeType})');
+  return DateTime.now();
+}
+
 enum PostType { announcement, poll }
 
 class Attachment {
@@ -59,7 +76,7 @@ class Post {
       'content': content,
       'authorId': authorId,
       'authorName': authorName,
-      'createdAt': createdAt.toIso8601String(),
+      'createdAt': Timestamp.fromDate(createdAt),
       'type': type.toString().split('.').last,
       'comments': comments.map((x) => x.toMap()).toList(),
       'attachments': attachments.map((x) => x.toMap()).toList(),
@@ -68,22 +85,13 @@ class Post {
 
   factory Post.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
-    DateTime parseDate(dynamic value) {
-      if (value == null) return DateTime.now();
-      if (value is Timestamp) return value.toDate();
-      if (value is String) return DateTime.tryParse(value) ?? DateTime.now();
-      if (value is DateTime) return value;
-      print('Invalid date type: $value ([33m${value.runtimeType}[0m)');
-      return DateTime.now();
-    }
-
     return Post(
       id: doc.id,
       title: data['title'] as String,
       content: data['content'] as String,
       authorId: data['authorId'] as String,
       authorName: data['authorName'] as String,
-      createdAt: parseDate(data['createdAt']),
+      createdAt: parseFirestoreDate(data['createdAt']),
       type: PostType.values.firstWhere(
         (e) => e.toString().split('.').last == data['type'],
       ),
@@ -131,7 +139,7 @@ class Comment {
       'userId': userId,
       'userName': userName,
       'isAnonymous': isAnonymous,
-      'createdAt': createdAt.toIso8601String(),
+      'createdAt': Timestamp.fromDate(createdAt),
       'replies': replies.map((x) => x.toMap()).toList(),
       'parentCommentId': parentCommentId,
       'userProfileImage': userProfileImage,
@@ -145,7 +153,7 @@ class Comment {
       userId: map['userId'] as String?,
       userName: map['userName'] as String,
       isAnonymous: map['isAnonymous'] as bool,
-      createdAt: DateTime.parse(map['createdAt'] as String),
+      createdAt: parseFirestoreDate(map['createdAt']),
       replies:
           (map['replies'] as List<dynamic>?)
               ?.map((x) => Comment.fromMap(x as Map<String, dynamic>))
@@ -171,13 +179,12 @@ class Poll extends Post {
     required super.authorName,
     required super.createdAt,
     required this.options,
+    required this.votedUserIds,
     required this.endDate,
     this.showResults = true,
-    List<String>? votedUserIds,
-    List<Attachment> attachments = const [],
-    List<Comment> comments = const [],
-  }) : votedUserIds = votedUserIds ?? [],
-       super(type: PostType.poll, attachments: attachments, comments: comments);
+    super.attachments = const [],
+    super.comments = const [],
+  }) : super(type: PostType.poll);
 
   bool get isExpired => DateTime.now().isAfter(endDate);
 
@@ -186,35 +193,20 @@ class Poll extends Post {
       ...super.toMap(),
       'options': options.map((option) => option.toMap()).toList(),
       'votedUserIds': votedUserIds,
-      'endDate': endDate.toIso8601String(),
+      'endDate': Timestamp.fromDate(endDate),
       'showResults': showResults,
     };
   }
 
   factory Poll.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
-    DateTime parseDate(dynamic value) {
-      if (value == null) return DateTime.now();
-      if (value is Timestamp) return value.toDate();
-      if (value is String) return DateTime.tryParse(value) ?? DateTime.now();
-      if (value is DateTime) return value;
-      print('Invalid date type: $value (${value.runtimeType})');
-      return DateTime.now();
-    }
-
-    final comments =
-        (data['comments'] as List<dynamic>?)
-            ?.map((x) => Comment.fromMap(x as Map<String, dynamic>))
-            .toList() ??
-        [];
-
     return Poll(
       id: doc.id,
-      title: data['title'] ?? '',
-      content: data['content'] ?? '',
-      authorId: data['authorId'] ?? '',
-      authorName: data['authorName'] ?? '',
-      createdAt: parseDate(data['createdAt']),
+      title: data['title'] as String,
+      content: data['content'] as String,
+      authorId: data['authorId'] as String,
+      authorName: data['authorName'] as String,
+      createdAt: parseFirestoreDate(data['createdAt']),
       options:
           (data['options'] as List<dynamic>)
               .map(
@@ -222,7 +214,7 @@ class Poll extends Post {
               )
               .toList(),
       votedUserIds: List<String>.from(data['votedUserIds'] ?? []),
-      endDate: parseDate(data['endDate']),
+      endDate: parseFirestoreDate(data['endDate']),
       showResults: data['showResults'] ?? true,
       attachments:
           (data['attachments'] as List<dynamic>?)
@@ -232,35 +224,13 @@ class Poll extends Post {
               )
               .toList() ??
           [],
-      comments: comments,
-    );
-  }
-
-  Poll copyWith({
-    String? id,
-    String? title,
-    String? content,
-    String? authorId,
-    String? authorName,
-    DateTime? createdAt,
-    List<PollOption>? options,
-    List<String>? votedUserIds,
-    DateTime? endDate,
-    bool? showResults,
-    List<Attachment>? attachments,
-  }) {
-    return Poll(
-      id: id ?? this.id,
-      title: title ?? this.title,
-      content: content ?? this.content,
-      authorId: authorId ?? this.authorId,
-      authorName: authorName ?? this.authorName,
-      createdAt: createdAt ?? this.createdAt,
-      options: options ?? this.options,
-      votedUserIds: votedUserIds ?? this.votedUserIds,
-      endDate: endDate ?? this.endDate,
-      showResults: showResults ?? this.showResults,
-      attachments: attachments ?? this.attachments,
+      comments:
+          (data['comments'] as List<dynamic>?)
+              ?.map(
+                (comment) => Comment.fromMap(comment as Map<String, dynamic>),
+              )
+              .toList() ??
+          [],
     );
   }
 }
@@ -276,7 +246,7 @@ class PollOption {
   }
 
   factory PollOption.fromMap(Map<String, dynamic> map) {
-    return PollOption(text: map['text'] ?? '', votes: map['votes'] ?? 0);
+    return PollOption(text: map['text'] as String, votes: map['votes'] as int);
   }
 
   PollOption copyWith({String? text, int? votes}) {

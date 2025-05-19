@@ -103,19 +103,22 @@ class CustomBottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 100,
+      height: 80,
       child: Stack(
         children: [
           Positioned.fill(
             child: CustomPaint(painter: _NavBarBackgroundPainter()),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 8,
+              vertical: 4, // Reduced vertical padding to fit content
+            ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children:
                   _buildButtons()
-                      .map((button) => Expanded(child: button))
+                      .map((button) => Flexible(child: button))
                       .toList(),
             ),
           ),
@@ -125,7 +128,7 @@ class CustomBottomNavBar extends StatelessWidget {
   }
 }
 
-class _NavBarButton extends StatelessWidget {
+class _NavBarButton extends StatefulWidget {
   final String assetPath;
   final String label;
   final bool selected;
@@ -139,92 +142,145 @@ class _NavBarButton extends StatelessWidget {
   });
 
   @override
+  _NavBarButtonState createState() => _NavBarButtonState();
+}
+
+class _NavBarButtonState extends State<_NavBarButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+    _animation = Tween<double>(
+      begin: 0,
+      end: -8,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+    _controller.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        _controller.reverse();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final labelColor =
-        selected
+        widget.selected
             ? const Color(0xFFFFB300) // Vibrant gold
-            : const Color(0xCCFFFFFF); // Soft white with transparency
+            : const Color(0xCCFFFFFF); // Soft white with transparency;
+
     return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          selected
-              ? Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color(0xFFFFB300),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.18),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                padding: const EdgeInsets.all(8),
-                child: SvgPicture.asset(assetPath, width: 26, height: 26),
-              )
-              : SvgPicture.asset(assetPath, width: 24, height: 24),
-          const SizedBox(height: 6),
-          selected
-              ? Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFFFE082), Color(0xFFFFB300)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.10),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    color: Colors.brown[900],
-                    fontWeight: FontWeight.w800,
-                    fontSize: 15,
-                    letterSpacing: 1.2,
-                    fontFamily: 'Montserrat', // Use a rounded font if available
-                    decoration: TextDecoration.none, // Remove underline
-                    shadows: [
-                      Shadow(
-                        color: Colors.black.withOpacity(0.13),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
+      onTap: () {
+        widget.onTap();
+        _controller.forward(); // Trigger animation
+      },
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) {
+          return Transform.translate(
+            offset: Offset(0, _animation.value),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                widget.selected
+                    ? Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: const Color(0xFFFFB300),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.18),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              )
-              : Text(
-                label,
-                style: TextStyle(
-                  color: labelColor,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
-                  letterSpacing: 1.1,
-                  fontFamily: 'Montserrat',
-                  decoration: TextDecoration.none, // Remove underline
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-        ],
+                      padding: const EdgeInsets.all(6), // Reduced padding
+                      child: SvgPicture.asset(
+                        widget.assetPath,
+                        width: 24,
+                        height: 24,
+                      ), // Reduced size
+                    )
+                    : SvgPicture.asset(
+                      widget.assetPath,
+                      width: 22,
+                      height: 22,
+                    ), // Reduced size
+                const SizedBox(height: 4), // Reduced height
+                widget.selected
+                    ? Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12, // Reduced horizontal padding
+                        vertical: 2, // Reduced vertical padding
+                      ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFFFE082), Color(0xFFFFB300)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.10),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        widget.label,
+                        style: TextStyle(
+                          color: Colors.brown[900],
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13, // Reduced font size
+                          letterSpacing: 1.2,
+                          fontFamily: 'Montserrat',
+                          decoration: TextDecoration.none,
+                          shadows: [
+                            Shadow(
+                              color: Colors.black.withOpacity(0.13),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 1, // Limit to one line to prevent overflow
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    )
+                    : Text(
+                      widget.label,
+                      style: TextStyle(
+                        color: labelColor,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12, // Reduced font size
+                        letterSpacing: 1.1,
+                        fontFamily: 'Montserrat',
+                        decoration: TextDecoration.none,
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 1, // Limit to one line
+                      overflow: TextOverflow.ellipsis,
+                    ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

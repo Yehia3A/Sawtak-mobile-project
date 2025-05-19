@@ -1,10 +1,15 @@
 // lib/src/app.dart
 
 import 'package:flutter/material.dart';
+import 'package:gov_citizen_app/src/citizen/report_screen.dart';
 import 'package:gov_citizen_app/src/screens/chat_page.dart';
 import 'package:provider/provider.dart';
 
 import 'src/providers/announcement_provider.dart';
+import 'src/providers/report_provider.dart';
+import 'src/providers/post_provider.dart';
+import 'src/providers/posts_provider.dart';
+import 'src/services/report.service.dart';
 import 'src/screens/auth_wrapper.dart';
 import 'src/screens/welcome_page.dart';
 import 'src/screens/login_screen.dart';
@@ -22,6 +27,9 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AnnouncementProvider()),
+        ChangeNotifierProvider(create: (_) => ReportProvider(ReportService())),
+        ChangeNotifierProvider(create: (_) => PostProvider()),
+        ChangeNotifierProvider(create: (_) => PostsProvider()),
         // Add other providers here as needed
       ],
       child: MaterialApp(
@@ -85,6 +93,12 @@ class MyApp extends StatelessWidget {
                 builder: (_) => const EditAccountPage(),
                 settings: settings,
               );
+            case '/report':
+              return MaterialPageRoute(
+                builder: (context) => ReportScreen(),
+                settings: settings,
+              );
+
             default:
               return MaterialPageRoute(
                 builder: (_) => const AuthWrapper(),

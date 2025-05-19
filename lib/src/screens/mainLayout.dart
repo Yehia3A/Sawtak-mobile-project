@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:gov_citizen_app/src/advertiser/profile_advertiser.dart';
 import 'package:gov_citizen_app/src/citizen/profile_citizen.dart';
+import 'package:gov_citizen_app/src/citizen/report_screen.dart'
+    show ReportScreen;
 import 'package:gov_citizen_app/src/gov/home_gov.dart';
 import 'package:gov_citizen_app/src/gov/profile_gov_admin.dart';
+import 'package:gov_citizen_app/src/gov/show_reports.dart'
+    show ShowReportsScreen;
+import 'package:gov_citizen_app/src/screens/posts_screen.dart';
 import 'package:gov_citizen_app/src/widgets/top_nav_bar.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
 import '../widgets/floating_top_bar.dart';
@@ -41,40 +46,50 @@ class _MainLayoutState extends State<MainLayout> {
     _initializePages();
   }
 
-void _initializePages() {
-  if (widget.role == 'Gov Admin') {
-    _pages = [
-      const HomeGovernment(),
-      const Placeholder(), // Other page (e.g., Check Reports)
-      ChatPage(),
-      GovAdminProfile(),
-    ];
-  } else if (widget.role == 'Advertiser') {
-    _pages = [
-      const HomeAdvertiser(),
-      CheckAdsScreen(userRole: widget.role),
-      ChatPage(),
-      ProfileAdvertiser(),
-    ];
-  } else {
-    _pages = [
-      const HomeCitizen(),
-      const Placeholder(),
-      ChatPage(),
-      CitizenProfile(),
-    ];
+  void _initializePages() {
+    if (widget.role == 'Gov Admin') {
+      _pages = [
+        const HomeGovernment(),
+        ShowReportsScreen(), // Show Reports as second tab
+        ChatPage(),
+        GovAdminProfile(),
+        PostsScreen(
+          currentUserId: FirebaseAuth.instance.currentUser?.uid ?? '',
+          currentUserName: FirebaseAuth.instance.currentUser?.displayName ?? '',
+          userRole: widget.role,
+        ),
+      ];
+    } else if (widget.role == 'Advertiser') {
+      _pages = [
+        const HomeAdvertiser(),
+        CheckAdsScreen(userRole: widget.role),
+        ChatPage(),
+        ProfileAdvertiser(),
+      ];
+    } else {
+      _pages = [
+        const HomeCitizen(),
+        ReportScreen(),
+        ChatPage(),
+        CitizenProfile(),
+        PostsScreen(
+          currentUserId: FirebaseAuth.instance.currentUser?.uid ?? '',
+          currentUserName: FirebaseAuth.instance.currentUser?.displayName ?? '',
+          userRole: widget.role,
+        ),
+      ];
+    }
   }
-}
 
   void _onTabTapped(int index) {
-  if (index < 0 || index >= _pages.length) {
-    debugPrint('Invalid index tapped: $index');
-    return;
+    if (index < 0 || index >= _pages.length) {
+      debugPrint('Invalid index tapped: $index');
+      return;
+    }
+    setState(() {
+      _currentIndex = index;
+    });
   }
-  setState(() {
-    _currentIndex = index;
-  });
-}
 
   @override
   Widget build(BuildContext context) {
@@ -86,7 +101,17 @@ void _initializePages() {
         bottom: false,
         child: Stack(
           children: [
-            Positioned.fill(child: _pages[_currentIndex]),
+            Positioned.fill(
+              child: Padding(
+                padding: const EdgeInsets.only(
+                  left: 16,
+                  right: 16,
+                  top: 80, // Extra top padding for the TopNavBar
+                  bottom: 80, // Extra bottom padding for the BottomNavBar
+                ),
+                child: _pages[_currentIndex],
+              ),
+            ),
             // Positioned(
             //   top: 0,
             //   left: 0,
