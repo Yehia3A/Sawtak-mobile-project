@@ -63,8 +63,11 @@ class UserService {
     String role,
     String firstName,
     String lastName,
-    String password,
-  ) async {
+    String password, {
+    required String city,
+    required String area,
+    required String phone,
+  }) async {
     try {
       await _firestore.collection('users').doc(uid).set({
         'email': email,
@@ -72,6 +75,9 @@ class UserService {
         'lastName': lastName,
         'password': password,
         'role': role, // 'Citizen' | 'Gov Admin' | 'Advertiser'
+        'city': city,
+        'area': area,
+        'phone': phone,
         'createdAt': FieldValue.serverTimestamp(),
         'isActive': true,
       });

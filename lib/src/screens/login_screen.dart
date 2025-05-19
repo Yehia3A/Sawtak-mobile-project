@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth.service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class LoginScreen extends StatefulWidget {
   static const routeName = '/login';
@@ -80,8 +81,67 @@ class _LoginScreenState extends State<LoginScreen>
         _emailController.text.trim(),
         _passwordController.text.trim(),
       );
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/');
+      final uid = cred.user?.uid;
+      if (uid != null) {
+        final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+        final data = userDoc.data();
+        if (data != null && data['is2faEnabled'] == true && data['phone'] != null && data['phone'].toString().isNotEmpty) {
+          final phone = data['phone'];
+          await FirebaseAuth.instance.signOut(); // Sign out to allow phone verification
+          await FirebaseAuth.instance.verifyPhoneNumber(
+            phoneNumber: phone,
+            verificationCompleted: (PhoneAuthCredential credential) async {
+              await FirebaseAuth.instance.signInWithCredential(credential);
+              if (mounted) {
+                Navigator.pushReplacementNamed(context, '/');
+              }
+            },
+            verificationFailed: (e) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('2FA failed: ${e.message}')),
+                );
+              }
+            },
+            codeSent: (verificationId, resendToken) async {
+              final code = await showDialog<String>(
+                context: context,
+                builder: (context) {
+                  final controller = TextEditingController();
+                  return AlertDialog(
+                    title: const Text('Enter OTP'),
+                    content: TextField(
+                      controller: controller,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(labelText: 'OTP Code'),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(controller.text),
+                        child: const Text('Verify'),
+                      ),
+                    ],
+                  );
+                },
+              );
+              if (code != null && code.isNotEmpty) {
+                final credential = PhoneAuthProvider.credential(
+                  verificationId: verificationId,
+                  smsCode: code,
+                );
+                await FirebaseAuth.instance.signInWithCredential(credential);
+                if (mounted) {
+                  Navigator.pushReplacementNamed(context, '/');
+                }
+              }
+            },
+            codeAutoRetrievalTimeout: (verificationId) {},
+          );
+        } else {
+          if (mounted) {
+            Navigator.pushReplacementNamed(context, '/');
+          }
+        }
       }
     } on FirebaseAuthException catch (e) {
       if (mounted) {
