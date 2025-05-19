@@ -1,0 +1,6 @@
+- Redesigned `lib/src/citizen/home_citizen.dart` to match the layout of `HomeGovernment`.
+- Added a feature card/button for Announcements that navigates to PostsScreen filtered for announcements.
+- Modified `lib/src/screens/posts_screen.dart` to support an `initialFilter` parameter for direct navigation to Announcements.
+- Updated Announcements button in HomeCitizen to use this filter.
+- HomeCitizen now only shows feature cards (e.g., Announcements, Recent Posts) and does not show posts by default. Navigation to posts/announcements is via the feature cards.
+- PostsScreen now includes a back button in the AppBar when navigated to, allowing users to return to the home page. 

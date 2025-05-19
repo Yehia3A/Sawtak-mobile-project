@@ -93,5 +93,26 @@ class UserService {
     }
   }
 
+  // Get seen notifications for a user
+  Future<List<String>> getSeenNotifications(String uid) async {
+    final doc = await _firestore.collection('users').doc(uid).get();
+    final data = doc.data();
+    if (data == null || data['seenNotifications'] == null) return [];
+    return List<String>.from(data['seenNotifications']);
+  }
+
+  // Add a notification to seenNotifications
+  Future<void> addSeenNotification(String uid, String notificationId) async {
+    await _firestore.collection('users').doc(uid).update({
+      'seenNotifications': FieldValue.arrayUnion([notificationId]),
+    });
+  }
+
+  // Check if a notification is unseen
+  Future<bool> isNotificationUnseen(String uid, String notificationId) async {
+    final seen = await getSeenNotifications(uid);
+    return !seen.contains(notificationId);
+  }
+
   // Test method to create a sample user
 }

@@ -66,4 +66,28 @@ class AdvertisementService {
     if (!doc.exists) return null;
     return AdvertisementRequest.fromMap(doc.data()!);
   }
+
+  // Get all pending requests (for admin)
+  Stream<List<AdvertisementRequest>> getPendingRequests() {
+    return _firestore
+        .collection(_collection)
+        .where('status', isEqualTo: 'pending')
+        .snapshots()
+        .map(
+          (snapshot) =>
+              snapshot.docs
+                  .map((doc) => AdvertisementRequest.fromMap(doc.data()))
+                  .toList(),
+        );
+  }
+
+  // Accept a pending request
+  Future<void> acceptRequest(String requestId) async {
+    await updateRequest(requestId, {'status': 'accepted'});
+  }
+
+  // Reject a pending request (delete from collection)
+  Future<void> rejectRequest(String requestId) async {
+    await deleteRequest(requestId);
+  }
 }

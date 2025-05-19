@@ -277,7 +277,7 @@ class PostsService {
   }) async {
     try {
       final postDoc =
-          await _firestore.collection(_postsCollection).doc(postId).get();
+      await _firestore.collection(_postsCollection).doc(postId).get();
       if (!postDoc.exists) {
         throw Exception('Post not found');
       }
@@ -294,7 +294,7 @@ class PostsService {
       // Verify comment ownership or admin status
       final comment = comments[commentIndex];
       if (comment['userId'] != userId && userRole != 'gov_admin') {
-        throw Exception('You can only delete your own comments');
+        throw Exception('You can only delete your own comments or you must be an admin');
       }
 
       comments.removeAt(commentIndex);
@@ -303,6 +303,7 @@ class PostsService {
         'comments': comments,
       });
     } catch (e) {
+      print('Error deleting comment: $e'); // Log the error
       throw Exception('Failed to delete comment: $e');
     }
   }

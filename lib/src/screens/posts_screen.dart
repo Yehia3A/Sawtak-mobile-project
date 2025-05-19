@@ -7,12 +7,14 @@ class PostsScreen extends StatefulWidget {
   final String currentUserId;
   final String currentUserName;
   final String userRole;
+  final String initialFilter;
 
   const PostsScreen({
     Key? key,
     required this.currentUserId,
     required this.currentUserName,
     required this.userRole,
+    this.initialFilter = 'All',
   }) : super(key: key);
 
   @override
@@ -24,11 +26,12 @@ class _PostsScreenState extends State<PostsScreen> {
   List<Post> _posts = [];
   bool _isLoading = true;
   String _error = '';
-  String _selectedFilter = 'All';
+  late String _selectedFilter;
 
   @override
   void initState() {
     super.initState();
+    _selectedFilter = widget.initialFilter;
     _loadPosts();
   }
 
@@ -87,6 +90,21 @@ class _PostsScreenState extends State<PostsScreen> {
   Widget build(BuildContext context) {
     final filteredPosts = _getFilteredPosts();
     return Scaffold(
+      appBar: AppBar(
+        leading:
+            Navigator.canPop(context)
+                ? IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () => Navigator.of(context).pop(),
+                )
+                : null,
+        title: Text(
+          _selectedFilter == 'Announcements' ? 'Announcements' : 'Posts',
+        ),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 1,
+      ),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _loadPosts,

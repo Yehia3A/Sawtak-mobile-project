@@ -9,8 +9,9 @@ import '../data/egypt_locations.dart';
 class CheckAdsScreen extends StatelessWidget {
   final _adService = AdvertisementService();
   final _authService = AuthService();
+  final String userRole;
 
-  CheckAdsScreen({super.key});
+  CheckAdsScreen({super.key, required this.userRole});
 
   Future<void> _launchUrl(String url) async {
     if (await canLaunch(url)) {
@@ -267,7 +268,10 @@ class CheckAdsScreen extends StatelessWidget {
                                     // Pop current screen and push a new instance
                                     Navigator.of(context).pushAndRemoveUntil(
                                       MaterialPageRoute(
-                                        builder: (context) => CheckAdsScreen(),
+                                        builder:
+                                            (context) => CheckAdsScreen(
+                                              userRole: userRole,
+                                            ),
                                       ),
                                       (route) =>
                                           false, // Remove all previous routes
@@ -389,9 +393,12 @@ class CheckAdsScreen extends StatelessWidget {
                           ),
                         ),
                         child: StreamBuilder<List<AdvertisementRequest>>(
-                          stream: _adService.getAdvertiserRequests(
-                            _authService.currentUser?.uid ?? '',
-                          ),
+                          stream:
+                              userRole == 'gov_admin'
+                                  ? _adService.getPendingRequests()
+                                  : _adService.getAdvertiserRequests(
+                                    _authService.currentUser?.uid ?? '',
+                                  ),
                           builder: (context, snapshot) {
                             if (snapshot.connectionState ==
                                 ConnectionState.waiting) {
@@ -444,7 +451,7 @@ class CheckAdsScreen extends StatelessWidget {
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
-                                      'Create your first ad to get started',
+                                      'theres no ad requests yet',
                                       style: TextStyle(
                                         color: Colors.grey[400],
                                         fontSize: 14,
@@ -581,18 +588,91 @@ class CheckAdsScreen extends StatelessWidget {
                                                   ),
                                                 ),
                                                 // Action buttons with improved styling
-                                                if (request.status == 'pending')
-                                                  IconButton(
-                                                    icon: const Icon(
-                                                      Icons.edit,
+                                                if (request.status ==
+                                                    'pending') ...[
+                                                  if (userRole ==
+                                                      'gov_admin') ...[
+                                                    ElevatedButton.icon(
+                                                      icon: const Icon(
+                                                        Icons.check,
+                                                        color: Colors.white,
+                                                      ),
+                                                      label: const Text(
+                                                        'Accept',
+                                                      ),
+                                                      style:
+                                                          ElevatedButton.styleFrom(
+                                                            backgroundColor:
+                                                                Colors.green,
+                                                            foregroundColor:
+                                                                Colors.white,
+                                                          ),
+                                                      onPressed: () async {
+                                                        await _adService
+                                                            .acceptRequest(
+                                                              request.id,
+                                                            );
+                                                        if (context.mounted) {
+                                                          ScaffoldMessenger.of(
+                                                            context,
+                                                          ).showSnackBar(
+                                                            const SnackBar(
+                                                              content: Text(
+                                                                'Ad accepted.',
+                                                              ),
+                                                            ),
+                                                          );
+                                                        }
+                                                      },
                                                     ),
-                                                    color: Colors.blue,
-                                                    onPressed:
-                                                        () => _showEditDialog(
-                                                          context,
-                                                          request,
-                                                        ),
-                                                  ),
+                                                    const SizedBox(width: 8),
+                                                    ElevatedButton.icon(
+                                                      icon: const Icon(
+                                                        Icons.close,
+                                                        color: Colors.white,
+                                                      ),
+                                                      label: const Text(
+                                                        'Reject',
+                                                      ),
+                                                      style:
+                                                          ElevatedButton.styleFrom(
+                                                            backgroundColor:
+                                                                Colors.red,
+                                                            foregroundColor:
+                                                                Colors.white,
+                                                          ),
+                                                      onPressed: () async {
+                                                        await _adService
+                                                            .rejectRequest(
+                                                              request.id,
+                                                            );
+                                                        if (context.mounted) {
+                                                          ScaffoldMessenger.of(
+                                                            context,
+                                                          ).showSnackBar(
+                                                            const SnackBar(
+                                                              content: Text(
+                                                                'Ad rejected.',
+                                                              ),
+                                                            ),
+                                                          );
+                                                        }
+                                                      },
+                                                    ),
+                                                  ] else ...[
+                                                    IconButton(
+                                                      icon: const Icon(
+                                                        Icons.edit,
+                                                      ),
+                                                      color: Colors.blue,
+                                                      onPressed:
+                                                          () => _showEditDialog(
+                                                            context,
+                                                            request,
+                                                          ),
+                                                    ),
+                                                  ],
+                                                ],
                                                 IconButton(
                                                   icon: const Icon(
                                                     Icons.delete,

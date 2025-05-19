@@ -1,6 +1,5 @@
-// lib/src/screens/home_government.dart
-
 import 'package:flutter/material.dart';
+import '../screens/check_ads_screen.dart';
 import '../services/auth.service.dart';
 import 'create_announcement_screen.dart';
 import 'create_poll_screen.dart';
@@ -80,22 +79,6 @@ class HomeGovernment extends StatelessWidget {
                       children: [
                         _buildFeatureCard(
                           context,
-                          'Manage Cases',
-                          Icons.cases,
-                          () {
-                            // TODO: Implement case management
-                          },
-                        ),
-                        _buildFeatureCard(
-                          context,
-                          'User Management',
-                          Icons.people,
-                          () {
-                            // TODO: Implement user management
-                          },
-                        ),
-                        _buildFeatureCard(
-                          context,
                           'Analytics',
                           Icons.analytics,
                           () {
@@ -147,6 +130,23 @@ class HomeGovernment extends StatelessWidget {
                                           user.displayName ?? 'Admin',
                                       userRole: 'gov_admin',
                                     ),
+                              ),
+                            );
+                          },
+                        ),
+                        _buildFeatureCard(
+                          // Add this card here
+                          context,
+                          'Show All Ad Requests',
+                          Icons.monetization_on, // Choose an appropriate icon
+                          () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => CheckAdsScreen(
+                                      userRole: 'gov_admin',
+                                    ), // Use CheckAdsScreen
                               ),
                             );
                           },

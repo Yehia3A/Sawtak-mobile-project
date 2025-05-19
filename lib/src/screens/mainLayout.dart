@@ -52,7 +52,7 @@ void _initializePages() {
   } else if (widget.role == 'Advertiser') {
     _pages = [
       const HomeAdvertiser(),
-      CheckAdsScreen(),
+      CheckAdsScreen(userRole: widget.role),
       ChatPage(),
       ProfileAdvertiser(),
     ];

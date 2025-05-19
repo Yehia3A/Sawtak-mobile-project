@@ -40,7 +40,26 @@ class _PostCardState extends State<PostCard> {
     _commentController.dispose();
     super.dispose();
   }
-
+  Future<void> _deleteComment(String postId, String commentId) async {
+    try {
+      await widget.postsService.deleteComment(
+        postId: postId,
+        commentId: commentId,
+        userId: widget.currentUserId, // Pass the current user's ID
+        userRole: widget.userRole,     // Pass the user's role
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Comment deleted successfully')),
+      );
+      setState(() {
+        widget.post.comments.removeWhere((c) => c.id == commentId);
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error deleting comment: $e')));
+    }
+  }
   Future<void> _addComment({String? parentCommentId}) async {
     if (_commentController.text.trim().isEmpty) return;
 
@@ -503,8 +522,7 @@ class _PostCardState extends State<PostCard> {
                     const SizedBox(height: 4),
                     Text(comment.text),
                     TextButton(
-                      onPressed:
-                          () => _startReply(comment.id, comment.userName),
+                      onPressed: () => _startReply(comment.id, comment.userName),
                       child: const Text(
                         'Reply',
                         style: TextStyle(fontSize: 12),
@@ -513,6 +531,11 @@ class _PostCardState extends State<PostCard> {
                   ],
                 ),
               ),
+              if (widget.userRole == 'gov_admin')
+                IconButton(
+                  icon: const Icon(Icons.delete),
+                  onPressed: () => _deleteComment(widget.post.id, comment.id),
+                ),
             ],
           ),
         ),

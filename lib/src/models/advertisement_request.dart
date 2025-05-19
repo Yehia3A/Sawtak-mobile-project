@@ -8,6 +8,8 @@ class AdvertisementRequest {
   final String city;
   final String area;
   final String link;
+
+  /// Status of the ad request: 'pending', 'accepted', 'rejected'
   final String status;
   final DateTime createdAt;
 
