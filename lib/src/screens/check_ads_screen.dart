@@ -10,8 +10,13 @@ class CheckAdsScreen extends StatelessWidget {
   final _adService = AdvertisementService();
   final _authService = AuthService();
   final String userRole;
+  final bool showAcceptedOnly;
 
-  CheckAdsScreen({super.key, required this.userRole});
+  CheckAdsScreen({
+    super.key,
+    required this.userRole,
+    this.showAcceptedOnly = false,
+  });
 
   Future<void> _launchUrl(String url) async {
     if (await canLaunch(url)) {
@@ -394,7 +399,9 @@ class CheckAdsScreen extends StatelessWidget {
                         ),
                         child: StreamBuilder<List<AdvertisementRequest>>(
                           stream:
-                              userRole == 'gov_admin'
+                              showAcceptedOnly
+                                  ? _adService.getAcceptedRequests()
+                                  : userRole == 'gov_admin'
                                   ? _adService.getPendingRequests()
                                   : _adService.getAdvertiserRequests(
                                     _authService.currentUser?.uid ?? '',

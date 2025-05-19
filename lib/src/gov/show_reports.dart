@@ -137,6 +137,16 @@ class _ShowReportsScreenState extends State<ShowReportsScreen>
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
+                      Text(
+                        'City: ${report.city}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        'Area: ${report.area}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ],
                   ),
                   children: [
@@ -145,6 +155,15 @@ class _ShowReportsScreenState extends State<ShowReportsScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          Text(
+                            'City: ${report.city}',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          Text(
+                            'Area: ${report.area}',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          SizedBox(height: 8),
                           Text(
                             'Details:',
                             style: TextStyle(fontWeight: FontWeight.bold),

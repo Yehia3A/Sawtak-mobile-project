@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart' as latlng;
 import '../providers/report_provider.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
+import '../data/egypt_locations.dart';
 
 class ReportScreen extends StatelessWidget {
   @override
@@ -84,6 +85,44 @@ class ReportForm extends StatelessWidget {
                 hintText: 'Stuck in elevator',
                 border: OutlineInputBorder(),
               ),
+            ),
+            SizedBox(height: 20),
+            DropdownButtonFormField<String>(
+              value: provider.selectedCity,
+              decoration: InputDecoration(
+                labelText: 'City',
+                border: OutlineInputBorder(),
+              ),
+              items:
+                  getAllCities()
+                      .map(
+                        (city) =>
+                            DropdownMenuItem(value: city, child: Text(city)),
+                      )
+                      .toList(),
+              onChanged: provider.selectCity,
+              validator: (value) => value == null ? 'Select a city' : null,
+            ),
+            SizedBox(height: 20),
+            DropdownButtonFormField<String>(
+              value: provider.selectedArea,
+              decoration: InputDecoration(
+                labelText: 'Area',
+                border: OutlineInputBorder(),
+              ),
+              items:
+                  provider.selectedCity == null
+                      ? []
+                      : getAreasForCity(provider.selectedCity!)
+                          .map(
+                            (area) => DropdownMenuItem(
+                              value: area,
+                              child: Text(area),
+                            ),
+                          )
+                          .toList(),
+              onChanged: provider.selectArea,
+              validator: (value) => value == null ? 'Select an area' : null,
             ),
             SizedBox(height: 20),
             Row(
