@@ -12,11 +12,6 @@ class UserService {
         .map((doc) => doc.data()?['role'] as String?);
   }
 
-  // Add to lib/src/services/user.serivce.dart
-  Future<Map<String, dynamic>?> getUserDoc(String uid) async {
-    final doc = await _firestore.collection('users').doc(uid).get();
-    return doc.data();
-  }
   // Fetch user role
   Future<String> fetchUserRole(String uid) async {
     final doc = await _firestore.collection('users').doc(uid).get();
