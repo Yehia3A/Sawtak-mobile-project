@@ -90,7 +90,7 @@ class _MainLayoutState extends State<MainLayout> {
     }
 
     // Handle special cases for citizen role
-    if (widget.role == 'citizen' && index > 4) {
+    if (widget.role == 'Citizen' && index > 4) {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) return;
 
@@ -107,7 +107,7 @@ class _MainLayoutState extends State<MainLayout> {
                   (context) => PostsScreen(
                     currentUserId: user.uid,
                     currentUserName: firstName,
-                    userRole: 'citizen',
+                    userRole: 'Citizen',
                     initialFilter: 'Announcements',
                   ),
             ),
@@ -121,7 +121,7 @@ class _MainLayoutState extends State<MainLayout> {
                   (context) => PostsScreen(
                     currentUserId: user.uid,
                     currentUserName: firstName,
-                    userRole: 'citizen',
+                    userRole: 'Citizen',
                   ),
             ),
           );
@@ -132,7 +132,7 @@ class _MainLayoutState extends State<MainLayout> {
             MaterialPageRoute(
               builder:
                   (context) => CheckAdsScreen(
-                    userRole: 'citizen',
+                    userRole: 'Citizen',
                     showAcceptedOnly: true,
                   ),
             ),
@@ -192,9 +192,7 @@ class _MainLayoutState extends State<MainLayout> {
             _buildDrawerItem(Icons.report, 'Report a Problem', 1),
             _buildDrawerItem(Icons.chat, 'Message Government', 2),
             _buildDrawerItem(Icons.person, 'Profile', 3),
-            _buildDrawerItem(Icons.announcement, 'Posts', 4),
             const Divider(color: Colors.white24),
-            
             _buildDrawerItem(Icons.verified, 'Show Ads', 7),
           ],
           const Divider(color: Colors.white24),
