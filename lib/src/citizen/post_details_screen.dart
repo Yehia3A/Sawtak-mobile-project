@@ -184,19 +184,31 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              e.toString().contains('inappropriate content')
-                  ? e.toString()
-                  : 'Error adding comment: $e',
-            ),
-            backgroundColor:
-                e.toString().contains('inappropriate content')
-                    ? Colors.red
-                    : null,
-          ),
-        );
+        if (e.toString().contains('inappropriate content')) {
+          showDialog(
+            context: context,
+            builder:
+                (context) => AlertDialog(
+                  title: const Text('Comment Blocked'),
+                  content: SelectableText.rich(
+                    TextSpan(
+                      text: e.toString(),
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('OK'),
+                    ),
+                  ],
+                ),
+          );
+        } else {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error adding comment: $e')));
+        }
       }
     }
   }

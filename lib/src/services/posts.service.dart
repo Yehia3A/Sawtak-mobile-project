@@ -125,28 +125,45 @@ class PostsService {
   // Check if a comment is toxic
   Future<bool> isCommentToxic(String text) async {
     try {
-      final response = await http.post(
-        Uri.parse(_apiUrl),
-        headers: {
-          "Authorization": "Bearer $_apiKey",
-          "Content-Type": "application/json",
-        },
-        body: jsonEncode({"inputs": text}),
-      );
+      if (_isArabic(text)) {
+        // Arabic: Use local Flask API
+        final response = await http.post(
+          Uri.parse('http://127.0.0.1:5000/analyze'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'text': text}),
+        );
+        if (response.statusCode == 200) {
+          final Map<String, dynamic> result = jsonDecode(response.body);
+          if (result['toxic'] == true) {
+            return true;
+          }
+        }
+        return false;
+      } else {
+        // English: Use HuggingFace API
+        final response = await http.post(
+          Uri.parse(_apiUrl),
+          headers: {
+            "Authorization": "Bearer $_apiKey",
+            "Content-Type": "application/json",
+          },
+          body: jsonEncode({"inputs": text}),
+        );
 
-      if (response.statusCode == 200) {
-        final List<dynamic> result = jsonDecode(response.body);
-        if (result.isNotEmpty && result[0] is List) {
-          final List<dynamic> predictions = result[0];
-          for (var prediction in predictions) {
-            if (prediction['label'] == 'offensive' &&
-                prediction['score'] > 0.5) {
-              return true;
+        if (response.statusCode == 200) {
+          final List<dynamic> result = jsonDecode(response.body);
+          if (result.isNotEmpty && result[0] is List) {
+            final List<dynamic> predictions = result[0];
+            for (var prediction in predictions) {
+              if (prediction['label'] == 'offensive' &&
+                  prediction['score'] > 0.5) {
+                return true;
+              }
             }
           }
         }
+        return false;
       }
-      return false;
     } catch (e) {
       print('Error checking comment toxicity: $e');
       return false;
@@ -413,4 +430,7 @@ class PostsService {
       throw Exception('Failed to remove attachment: $e');
     }
   }
+
+  // Helper: Detect if text is Arabic
+  bool _isArabic(String text) => RegExp(r'[\u0600-\u06FF]').hasMatch(text);
 }
