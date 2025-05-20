@@ -18,6 +18,7 @@ import '../screens/check_ads_screen.dart';
 import '../screens/chat_page.dart';
 import '../citizen/home_citizen.dart';
 import '../services/auth.service.dart';
+import '../services/emergency_numbers.service.dart';
 
 class MainLayout extends StatefulWidget {
   final List<Widget> pages;
@@ -41,6 +42,7 @@ class _MainLayoutState extends State<MainLayout> {
   int _currentIndex = 0;
   late List<Widget> _pages;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final EmergencyNumbersService _emergencyService = EmergencyNumbersService();
 
   @override
   void initState() {
@@ -147,6 +149,84 @@ class _MainLayoutState extends State<MainLayout> {
         _currentIndex = index;
       });
     }
+  }
+
+  void _showEmergencyNumbers() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.black.withOpacity(0.9),
+          title: const Row(
+            children: [
+              Icon(Icons.emergency, color: Colors.red),
+              SizedBox(width: 8),
+              Text(
+                'Emergency Numbers',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          content: StreamBuilder<List<EmergencyNumber>>(
+            stream: _emergencyService.getEmergencyNumbers(),
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return Center(
+                  child: Text(
+                    'Error: ${snapshot.error}',
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                );
+              }
+
+              if (!snapshot.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              final numbers = snapshot.data!;
+
+              if (numbers.isEmpty) {
+                return const Center(
+                  child: Text(
+                    'No emergency numbers available',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                );
+              }
+
+              return SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children:
+                      numbers.map((number) {
+                        return Column(
+                          children: [
+                            _buildEmergencyNumber(
+                              number.name,
+                              number.number,
+                              number.icon,
+                              number.color,
+                            ),
+                            const SizedBox(height: 12),
+                          ],
+                        );
+                      }).toList(),
+                ),
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Widget _buildDrawer() {
@@ -279,85 +359,7 @@ class _MainLayoutState extends State<MainLayout> {
                       const Spacer(),
                       IconButton(
                         icon: const Icon(Icons.emergency, color: Colors.red),
-                        onPressed: () {
-                          showDialog(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return AlertDialog(
-                                backgroundColor: Colors.black.withOpacity(0.9),
-                                title: const Row(
-                                  children: [
-                                    Icon(Icons.emergency, color: Colors.red),
-                                    SizedBox(width: 8),
-                                    Text(
-                                      'Emergency Numbers',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                content: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    _buildEmergencyNumber(
-                                      'Police',
-                                      '122',
-                                      Icons.local_police,
-                                      Colors.blue,
-                                    ),
-                                    const SizedBox(height: 12),
-                                    _buildEmergencyNumber(
-                                      'Ambulance',
-                                      '123',
-                                      Icons.medical_services,
-                                      Colors.red,
-                                    ),
-                                    const SizedBox(height: 12),
-                                    _buildEmergencyNumber(
-                                      'Fire Department',
-                                      '180',
-                                      Icons.fire_truck,
-                                      Colors.orange,
-                                    ),
-                                    const SizedBox(height: 12),
-                                    _buildEmergencyNumber(
-                                      'Tourist Police',
-                                      '126',
-                                      Icons.tour,
-                                      Colors.green,
-                                    ),
-                                    const SizedBox(height: 12),
-                                    _buildEmergencyNumber(
-                                      'Electricity Emergency',
-                                      '121',
-                                      Icons.electric_bolt,
-                                      Colors.yellow,
-                                    ),
-                                    const SizedBox(height: 12),
-                                    _buildEmergencyNumber(
-                                      'Gas Emergency',
-                                      '129',
-                                      Icons.gas_meter,
-                                      Colors.orange,
-                                    ),
-                                  ],
-                                ),
-                                actions: [
-                                  TextButton(
-                                    onPressed:
-                                        () => Navigator.of(context).pop(),
-                                    child: const Text(
-                                      'Close',
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                  ),
-                                ],
-                              );
-                            },
-                          );
-                        },
+                        onPressed: _showEmergencyNumbers,
                       ),
                       IconButton(
                         icon: const Icon(

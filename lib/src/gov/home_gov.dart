@@ -6,6 +6,7 @@ import 'create_announcement_screen.dart';
 import 'create_poll_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'analytics_screen.dart';
+import 'manage_emergency_numbers.dart';
 
 class HomeGovernment extends StatelessWidget {
   const HomeGovernment({super.key});
@@ -180,6 +181,28 @@ class HomeGovernment extends StatelessWidget {
                           () {
                             // TODO: Implement settings
                           },
+                        ),
+                        Card(
+                          child: ListTile(
+                            leading: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.red.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(Icons.emergency, color: Colors.red),
+                            ),
+                            title: const Text('Manage Emergency Numbers'),
+                            subtitle: const Text('Add, edit, or remove emergency contact numbers'),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const ManageEmergencyNumbers(),
+                                ),
+                              );
+                            },
+                          ),
                         ),
                       ],
                     ),
