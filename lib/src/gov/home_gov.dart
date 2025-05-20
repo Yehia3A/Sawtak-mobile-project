@@ -190,11 +190,6 @@ class HomeGovernment extends StatelessWidget {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.pushNamed(context, '/chat'),
-        child: Icon(Icons.chat),
-        backgroundColor: Colors.amber,
-      ),
     );
   }
 
