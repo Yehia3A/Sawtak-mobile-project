@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:gov_citizen_app/src/screens/posts_screen.dart';
 import 'package:gov_citizen_app/src/services/user.serivce.dart';
+import 'package:flutter/rendering.dart';
 
 class HomeCitizen extends StatelessWidget {
   const HomeCitizen({super.key});
@@ -44,24 +46,35 @@ class HomeCitizen extends StatelessWidget {
                     ],
                   ),
                 ),
-                // Main Content - Posts Screen
+                // Main Content - Posts Screen with frosted glass effect
                 Expanded(
-                  child: FutureBuilder<String>(
-                    future:
-                        user != null
-                            ? UserService().fetchUserFirstName(user.uid)
-                            : Future.value('Anonymous'),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-
-                      return PostsScreen(
-                        currentUserId: user?.uid ?? '',
-                        currentUserName: snapshot.data ?? 'Anonymous',
-                        userRole: 'citizen',
-                      );
-                    },
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      child: Container(
+                        color: Colors.white.withOpacity(0.10),
+                        child: FutureBuilder<String>(
+                          future:
+                              user != null
+                                  ? UserService().fetchUserFirstName(user.uid)
+                                  : Future.value('Anonymous'),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Center(
+                                child: CircularProgressIndicator(),
+                              );
+                            }
+                            return PostsScreen(
+                              currentUserId: user?.uid ?? '',
+                              currentUserName: snapshot.data ?? 'Anonymous',
+                              userRole: 'citizen',
+                            );
+                          },
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ],
