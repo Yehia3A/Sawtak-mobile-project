@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth.service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:app_links/app_links.dart';
 
 class LoginScreen extends StatefulWidget {
   static const routeName = '/login';
@@ -18,6 +19,9 @@ class _LoginScreenState extends State<LoginScreen>
   final _formKey = GlobalKey<FormState>();
   bool _loading = false;
   bool _obscurePassword = true;
+  StreamSubscription? _linkSubscription;
+  final AuthService _authService = AuthService();
+  late AppLinks _appLinks;
 
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -46,10 +50,57 @@ class _LoginScreenState extends State<LoginScreen>
     );
 
     _aniController.forward();
+    _initDeepLinkListener();
+  }
+
+  void _initDeepLinkListener() async {
+    _appLinks = AppLinks();
+
+    // Handle initial link if app was opened from a link
+    try {
+      final initialLink = await _appLinks.getInitialLink();
+      if (initialLink != null) {
+        _handleDeepLink(initialLink.toString());
+      }
+    } catch (e) {
+      print('Error getting initial link: $e');
+    }
+
+    // Listen for incoming links while app is running
+    _linkSubscription = _appLinks.uriLinkStream.listen(
+      (Uri? link) {
+        if (link != null) {
+          _handleDeepLink(link.toString());
+        }
+      },
+      onError: (err) {
+        print('Error handling deep link: $err');
+      },
+    );
+  }
+
+  Future<void> _handleDeepLink(String link) async {
+    try {
+      final success = await _authService.handleVerificationLink(link);
+      if (success && mounted) {
+        // Navigate to home page after successful verification
+        Navigator.pushReplacementNamed(context, '/');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error handling verification link: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
   void dispose() {
+    _linkSubscription?.cancel();
     _aniController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
@@ -78,34 +129,37 @@ class _LoginScreenState extends State<LoginScreen>
     setState(() => _loading = true);
 
     try {
-      final authService = AuthService();
       final email = _emailController.text.trim();
       final password = _passwordController.text.trim();
-      
-      final cred = await authService.signIn(email, password);
+
+      final cred = await _authService.signIn(email, password);
       final uid = cred.user?.uid;
-      
+
       if (uid != null) {
-        final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+        final userDoc =
+            await FirebaseFirestore.instance.collection('users').doc(uid).get();
         final data = userDoc.data();
-        
+
         if (data != null && data['is2faEnabled'] == true) {
           // Check if there's already an active verification
-          final hasActiveVerification = await authService.hasActiveVerification(email);
-          
+          final hasActiveVerification = await _authService
+              .hasActiveVerification(email);
+
           if (!hasActiveVerification) {
             // Sign out and send verification email with password for auto-login
             await FirebaseAuth.instance.signOut();
-            await authService.sendEmailVerification(
-              email, 
+            await _authService.sendEmailVerification(
+              email,
               password: password,
               isLogin: true, // This is a login verification
             );
-            
+
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Please check your email to complete 2FA verification'),
+                  content: Text(
+                    'Please check your email to complete 2FA verification',
+                  ),
                   duration: Duration(seconds: 5),
                 ),
               );
@@ -114,44 +168,49 @@ class _LoginScreenState extends State<LoginScreen>
 
           // Start polling for verification
           StreamSubscription? subscription;
-          subscription = authService.pollEmailVerification(email).listen(
-            (isPending) async {
-              if (!isPending && mounted) { // Verification is complete
-                // Cancel subscription
-                await subscription?.cancel();
-                
-                // Check if we're already logged in
-                if (FirebaseAuth.instance.currentUser != null) {
-                  Navigator.pushReplacementNamed(context, '/');
-                } else {
-                  // Try to log in again
-                  try {
-                    await authService.signIn(email, password);
-                    if (mounted) {
+          subscription = _authService
+              .pollEmailVerification(email)
+              .listen(
+                (isPending) async {
+                  if (!isPending && mounted) {
+                    // Verification is complete
+                    // Cancel subscription
+                    await subscription?.cancel();
+
+                    // Check if we're already logged in
+                    if (FirebaseAuth.instance.currentUser != null) {
                       Navigator.pushReplacementNamed(context, '/');
-                    }
-                  } catch (e) {
-                    print('Error during auto-login: $e');
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Verification successful. Please try logging in again.'),
-                          backgroundColor: Colors.orange,
-                        ),
-                      );
+                    } else {
+                      // Try to log in again
+                      try {
+                        await _authService.signIn(email, password);
+                        if (mounted) {
+                          Navigator.pushReplacementNamed(context, '/');
+                        }
+                      } catch (e) {
+                        print('Error during auto-login: $e');
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Verification successful. Please try logging in again.',
+                              ),
+                              backgroundColor: Colors.orange,
+                            ),
+                          );
+                        }
+                      }
                     }
                   }
-                }
-              }
-            },
-            onError: (e) {
-              print('Error polling verification status: $e');
-              subscription?.cancel();
-            },
-            onDone: () {
-              subscription?.cancel();
-            },
-          );
+                },
+                onError: (e) {
+                  print('Error polling verification status: $e');
+                  subscription?.cancel();
+                },
+                onDone: () {
+                  subscription?.cancel();
+                },
+              );
         } else {
           // No 2FA required, proceed with login
           if (mounted) {

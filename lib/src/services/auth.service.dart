@@ -31,51 +31,62 @@ class AuthService {
       final now = DateTime.now();
       final oneHourAgo = now.subtract(const Duration(hours: 1));
       final oneDayAgo = now.subtract(const Duration(days: 1));
-      
-      // Check daily attempts first
-      final dailyAttempts = await _firestore
-          .collection('emailVerificationAttempts')
-          .where('lastAttempt', isGreaterThan: Timestamp.fromDate(oneDayAgo))
-          .get();
 
-      if (dailyAttempts.docs.length >= 20) { // Daily limit
+      // Check daily attempts first
+      final dailyAttempts =
+          await _firestore
+              .collection('emailVerificationAttempts')
+              .where(
+                'lastAttempt',
+                isGreaterThan: Timestamp.fromDate(oneDayAgo),
+              )
+              .get();
+
+      if (dailyAttempts.docs.length >= 20) {
+        // Daily limit
         throw Exception(
-          'Daily verification limit reached. Please try again tomorrow or contact support.'
+          'Daily verification limit reached. Please try again tomorrow or contact support.',
         );
       }
 
       // Check hourly attempts
-      final hourlyAttempts = await _firestore
-          .collection('emailVerificationAttempts')
-          .where('lastAttempt', isGreaterThan: Timestamp.fromDate(oneHourAgo))
-          .get();
+      final hourlyAttempts =
+          await _firestore
+              .collection('emailVerificationAttempts')
+              .where(
+                'lastAttempt',
+                isGreaterThan: Timestamp.fromDate(oneHourAgo),
+              )
+              .get();
 
-      if (hourlyAttempts.docs.length >= 5) { // Hourly limit
+      if (hourlyAttempts.docs.length >= 5) {
+        // Hourly limit
         throw Exception(
-          'Too many verification attempts. Please wait at least 1 hour before trying again.'
+          'Too many verification attempts. Please wait at least 1 hour before trying again.',
         );
       }
 
       // Check individual user's last attempt
-      final userDoc = await _firestore
-          .collection('emailVerificationAttempts')
-          .doc(email)
-          .get();
-      
+      final userDoc =
+          await _firestore
+              .collection('emailVerificationAttempts')
+              .doc(email)
+              .get();
+
       if (userDoc.exists) {
         final lastAttempt = userDoc.data()?['lastAttempt'] as Timestamp?;
         if (lastAttempt != null) {
           // Allow one attempt per 5 minutes per email
-          final minutesSinceLastAttempt = 
+          final minutesSinceLastAttempt =
               now.difference(lastAttempt.toDate()).inMinutes;
           if (minutesSinceLastAttempt < 5) {
             throw Exception(
-              'Please wait ${5 - minutesSinceLastAttempt} minutes before requesting another verification email.'
+              'Please wait ${5 - minutesSinceLastAttempt} minutes before requesting another verification email.',
             );
           }
         }
       }
-      
+
       return true;
     } catch (e) {
       if (e is Exception) {
@@ -89,15 +100,12 @@ class AuthService {
   /// Update last verification attempt timestamp
   Future<void> _updateVerificationAttempt(String email) async {
     final now = Timestamp.now();
-    await _firestore
-        .collection('emailVerificationAttempts')
-        .doc(email)
-        .set({
-          'email': email,
-          'lastAttempt': now,
-          'attempts': FieldValue.increment(1),
-          'hourlyPeriod': now.toDate().hour, // Track hourly periods
-        }, SetOptions(merge: true));
+    await _firestore.collection('emailVerificationAttempts').doc(email).set({
+      'email': email,
+      'lastAttempt': now,
+      'attempts': FieldValue.increment(1),
+      'hourlyPeriod': now.toDate().hour, // Track hourly periods
+    }, SetOptions(merge: true));
   }
 
   /// Handle verification link click
@@ -116,10 +124,8 @@ class AuthService {
       if (email == null) return false;
 
       // Get verification document
-      final verificationDoc = await _firestore
-          .collection('emailVerification')
-          .doc(email)
-          .get();
+      final verificationDoc =
+          await _firestore.collection('emailVerification').doc(email).get();
 
       if (!verificationDoc.exists) return false;
 
@@ -163,7 +169,11 @@ class AuthService {
   }
 
   /// Send email verification link
-  Future<void> sendEmailVerification(String email, {String? password, bool isLogin = false}) async {
+  Future<void> sendEmailVerification(
+    String email, {
+    String? password,
+    bool isLogin = false,
+  }) async {
     try {
       // Check rate limiting
       try {
@@ -174,17 +184,16 @@ class AuthService {
 
       // Configure action code settings
       final actionCodeSettings = ActionCodeSettings(
-        url: 'https://sawtak-citizen-app-691b1.firebaseapp.com/__/auth/action',
+        url: 'http://localhost:3000', // Updated URL as requested
         handleCodeInApp: true,
         androidPackageName: 'com.sawtak.app',
         androidMinimumVersion: '1',
         iOSBundleId: 'gov.project',
-        dynamicLinkDomain: 'sawtak.page.link',
       );
 
       // First ensure we have a signed in user
       User? user = _auth.currentUser;
-      
+
       // If no user is signed in, try to sign in with the provided email
       if (user == null && password != null) {
         try {
@@ -195,39 +204,9 @@ class AuthService {
           user = userCred.user;
         } catch (e) {
           if (e is FirebaseAuthException && e.code == 'too-many-requests') {
-            throw Exception('Too many sign-in attempts. Please try again later.');
-          }
-          rethrow;
-        }
-      } else if (user == null) {
-        // Get the user document to retrieve the password
-        final userDoc = await _firestore
-            .collection('users')
-            .where('email', isEqualTo: email)
-            .limit(1)
-            .get();
-            
-        if (userDoc.docs.isEmpty) {
-          throw Exception('User not found');
-        }
-        
-        final userData = userDoc.docs.first.data();
-        final storedPassword = userData['password'] as String?;
-        
-        if (storedPassword == null) {
-          throw Exception('Invalid user data');
-        }
-        
-        // Sign in the user
-        try {
-          final userCred = await _auth.signInWithEmailAndPassword(
-            email: email,
-            password: storedPassword,
-          );
-          user = userCred.user;
-        } catch (e) {
-          if (e is FirebaseAuthException && e.code == 'too-many-requests') {
-            throw Exception('Too many sign-in attempts. Please try again later.');
+            throw Exception(
+              'Too many sign-in attempts. Please try again later.',
+            );
           }
           rethrow;
         }
@@ -237,6 +216,16 @@ class AuthService {
         throw Exception('Failed to authenticate user');
       }
 
+      // Check if 2FA is enabled for the user
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      final data = userDoc.data();
+      final is2faEnabled = data?['is2faEnabled'] ?? false;
+
+      // Only proceed with email verification if 2FA is enabled
+      if (!is2faEnabled) {
+        throw Exception('2FA is not enabled for this user');
+      }
+
       // Send verification email
       try {
         await user.sendEmailVerification(actionCodeSettings);
@@ -244,19 +233,25 @@ class AuthService {
         if (e is FirebaseAuthException) {
           switch (e.code) {
             case 'too-many-requests':
-              throw Exception('Too many verification attempts. Please try again later.');
+              throw Exception(
+                'Too many verification attempts. Please try again later.',
+              );
             case 'quota-exceeded':
-              throw Exception('Daily verification quota exceeded. Please try again tomorrow.');
+              throw Exception(
+                'Daily verification quota exceeded. Please try again tomorrow.',
+              );
             default:
-              throw Exception('Failed to send verification email: ${e.message}');
+              throw Exception(
+                'Failed to send verification email: ${e.message}',
+              );
           }
         }
         rethrow;
       }
-      
+
       // Update rate limiting record
       await _updateVerificationAttempt(email);
-      
+
       // Store the email in Firestore for verification with additional data
       await _firestore.collection('emailVerification').doc(email).set({
         'email': email,
@@ -267,7 +262,9 @@ class AuthService {
         'isLogin': isLogin,
       });
     } catch (e) {
-      throw Exception(e.toString().replaceAll('Exception: ', '')); // Clean up error message
+      throw Exception(
+        e.toString().replaceAll('Exception: ', ''),
+      ); // Clean up error message
     }
   }
 
@@ -285,7 +282,7 @@ class AuthService {
         'twoFactorMethod': 'email',
         'verifiedEmail': email,
       });
-      
+
       // Mark email as verified
       await _firestore.collection('emailVerification').doc(email).update({
         'verified': true,
@@ -300,21 +297,19 @@ class AuthService {
   Future<bool> isEmailVerificationPending(String email) async {
     try {
       // Get verification document first
-      final verificationDoc = await _firestore
-          .collection('emailVerification')
-          .doc(email)
-          .get();
-          
+      final verificationDoc =
+          await _firestore.collection('emailVerification').doc(email).get();
+
       if (!verificationDoc.exists) return false;
-      
+
       final data = verificationDoc.data();
       final uid = data?['uid'] as String?;
       final storedPassword = data?['password'] as String?;
       final isLogin = data?['isLogin'] as bool? ?? false;
-      
+
       // Check if user is verified
       User? user = _auth.currentUser;
-      
+
       // Try to sign in if this is a login verification and no user is logged in
       if (isLogin && storedPassword != null) {
         try {
@@ -325,11 +320,11 @@ class AuthService {
             );
             user = userCred.user;
           }
-          
+
           // Reload user to get latest verification status
           await user?.reload();
           user = _auth.currentUser; // Get fresh user instance
-          
+
           if (user?.emailVerified == true && uid != null) {
             // Update user's 2FA status
             await _firestore.collection('users').doc(uid).update({
@@ -337,21 +332,21 @@ class AuthService {
               'twoFactorMethod': 'email',
               'verifiedEmail': email,
             });
-            
+
             // Mark verification as complete
             await verificationDoc.reference.update({
               'verified': true,
               'verifiedAt': FieldValue.serverTimestamp(),
               'password': FieldValue.delete(), // Clean up password
             });
-            
+
             return false; // Stop polling and proceed with login
           }
         } catch (e) {
           print('Error during verification check: $e');
         }
       }
-      
+
       // Still pending verification
       return true;
     } catch (e) {
@@ -363,21 +358,19 @@ class AuthService {
   /// Check if user has a pending verification
   Future<bool> hasActiveVerification(String email) async {
     try {
-      final doc = await _firestore
-          .collection('emailVerification')
-          .doc(email)
-          .get();
-          
+      final doc =
+          await _firestore.collection('emailVerification').doc(email).get();
+
       if (!doc.exists) return false;
-      
+
       final data = doc.data();
       if (data == null) return false;
-      
+
       final verified = data['verified'] as bool? ?? false;
       final createdAt = data['createdAt'] as Timestamp?;
-      
+
       if (createdAt == null) return false;
-      
+
       // Check if verification is less than 1 hour old
       final age = DateTime.now().difference(createdAt.toDate());
       return !verified && age.inHours < 1;
@@ -391,8 +384,10 @@ class AuthService {
   Stream<bool> pollEmailVerification(String email) {
     // Poll every second for quicker response
     return Stream.periodic(const Duration(seconds: 1))
-      .asyncMap((_) => isEmailVerificationPending(email))
-      .takeWhile((isPending) => isPending) // Continue while verification is pending
-      .asBroadcastStream();
+        .asyncMap((_) => isEmailVerificationPending(email))
+        .takeWhile(
+          (isPending) => isPending,
+        ) // Continue while verification is pending
+        .asBroadcastStream();
   }
 }
