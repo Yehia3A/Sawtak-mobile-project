@@ -83,14 +83,70 @@ class _MainLayoutState extends State<MainLayout> {
     }
   }
 
-  void _onTabTapped(int index) {
-    if (index < 0 || index >= _pages.length) {
+  void _onTabTapped(int index) async {
+    if (index < 0) {
       debugPrint('Invalid index tapped: $index');
       return;
     }
-    setState(() {
-      _currentIndex = index;
-    });
+
+    // Handle special cases for citizen role
+    if (widget.role == 'citizen' && index > 4) {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+
+      final firstName = await UserService().fetchUserFirstName(user.uid);
+
+      if (!mounted) return;
+
+      switch (index) {
+        case 5: // Announcements
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (context) => PostsScreen(
+                    currentUserId: user.uid,
+                    currentUserName: firstName,
+                    userRole: 'citizen',
+                    initialFilter: 'Announcements',
+                  ),
+            ),
+          );
+          return;
+        case 6: // Recent Posts
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (context) => PostsScreen(
+                    currentUserId: user.uid,
+                    currentUserName: firstName,
+                    userRole: 'citizen',
+                  ),
+            ),
+          );
+          return;
+        case 7: // Show Ads
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (context) => CheckAdsScreen(
+                    userRole: 'citizen',
+                    showAcceptedOnly: true,
+                  ),
+            ),
+          );
+          return;
+      }
+    }
+
+    // Handle regular page navigation
+    if (index < _pages.length) {
+      setState(() {
+        _currentIndex = index;
+      });
+    }
   }
 
   Widget _buildDrawer() {
@@ -137,6 +193,9 @@ class _MainLayoutState extends State<MainLayout> {
             _buildDrawerItem(Icons.chat, 'Message Government', 2),
             _buildDrawerItem(Icons.person, 'Profile', 3),
             _buildDrawerItem(Icons.announcement, 'Posts', 4),
+            const Divider(color: Colors.white24),
+            
+            _buildDrawerItem(Icons.verified, 'Show Ads', 7),
           ],
           const Divider(color: Colors.white24),
           ListTile(

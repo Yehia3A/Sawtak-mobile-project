@@ -196,7 +196,7 @@ class HomeGovernment extends StatelessWidget {
   Widget _buildStatCard(String title, String value, Color color) {
     return Expanded(
       child: Card(
-        color: Colors.white.withOpacity(0.9),
+        color: Colors.black.withOpacity(0.9),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -212,7 +212,7 @@ class HomeGovernment extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 title,
-                style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                style: const TextStyle(fontSize: 14, color: Colors.white),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -230,19 +230,23 @@ class HomeGovernment extends StatelessWidget {
   ) {
     return Card(
       elevation: 4,
-      color: Colors.white.withOpacity(0.9),
+      color: Colors.black.withOpacity(0.9),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 40, color: Theme.of(context).primaryColor),
+            Icon(icon, size: 40, color: Colors.white),
             const SizedBox(height: 8),
             Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
           ],
         ),
