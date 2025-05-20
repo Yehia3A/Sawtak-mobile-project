@@ -1,6 +1,8 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.sawtak.app">
     <application
-        android:label="gov_citizen_app"
+        android:label="Sawtak"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

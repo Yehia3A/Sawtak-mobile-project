@@ -66,10 +66,10 @@ class UserService {
     String password, {
     required String city,
     required String area,
-    required String phone,
+    String? phone,
   }) async {
     try {
-      await _firestore.collection('users').doc(uid).set({
+      final userData = {
         'email': email,
         'firstName': firstName,
         'lastName': lastName,
@@ -77,10 +77,15 @@ class UserService {
         'role': role, // 'Citizen' | 'Gov Admin' | 'Advertiser'
         'city': city,
         'area': area,
-        'phone': phone,
         'createdAt': FieldValue.serverTimestamp(),
         'isActive': true,
-      });
+      };
+      
+      if (phone != null) {
+        userData['phone'] = phone;
+      }
+      
+      await _firestore.collection('users').doc(uid).set(userData);
       print('✅ User document created successfully');
     } catch (e) {
       print('❌ Error creating user document: $e');

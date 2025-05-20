@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth.service.dart';
@@ -77,67 +78,82 @@ class _LoginScreenState extends State<LoginScreen>
     setState(() => _loading = true);
 
     try {
-      final cred = await AuthService().signIn(
-        _emailController.text.trim(),
-        _passwordController.text.trim(),
-      );
+      final authService = AuthService();
+      final email = _emailController.text.trim();
+      final password = _passwordController.text.trim();
+      
+      final cred = await authService.signIn(email, password);
       final uid = cred.user?.uid;
+      
       if (uid != null) {
         final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
         final data = userDoc.data();
-        if (data != null && data['is2faEnabled'] == true && data['phone'] != null && data['phone'].toString().isNotEmpty) {
-          final phone = data['phone'];
-          await FirebaseAuth.instance.signOut(); // Sign out to allow phone verification
-          await FirebaseAuth.instance.verifyPhoneNumber(
-            phoneNumber: phone,
-            verificationCompleted: (PhoneAuthCredential credential) async {
-              await FirebaseAuth.instance.signInWithCredential(credential);
-              if (mounted) {
-                Navigator.pushReplacementNamed(context, '/');
-              }
-            },
-            verificationFailed: (e) {
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('2FA failed: ${e.message}')),
-                );
-              }
-            },
-            codeSent: (verificationId, resendToken) async {
-              final code = await showDialog<String>(
-                context: context,
-                builder: (context) {
-                  final controller = TextEditingController();
-                  return AlertDialog(
-                    title: const Text('Enter OTP'),
-                    content: TextField(
-                      controller: controller,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'OTP Code'),
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(controller.text),
-                        child: const Text('Verify'),
-                      ),
-                    ],
-                  );
-                },
+        
+        if (data != null && data['is2faEnabled'] == true) {
+          // Check if there's already an active verification
+          final hasActiveVerification = await authService.hasActiveVerification(email);
+          
+          if (!hasActiveVerification) {
+            // Sign out and send verification email with password for auto-login
+            await FirebaseAuth.instance.signOut();
+            await authService.sendEmailVerification(
+              email, 
+              password: password,
+              isLogin: true, // This is a login verification
+            );
+            
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Please check your email to complete 2FA verification'),
+                  duration: Duration(seconds: 5),
+                ),
               );
-              if (code != null && code.isNotEmpty) {
-                final credential = PhoneAuthProvider.credential(
-                  verificationId: verificationId,
-                  smsCode: code,
-                );
-                await FirebaseAuth.instance.signInWithCredential(credential);
-                if (mounted) {
+            }
+          }
+
+          // Start polling for verification
+          StreamSubscription? subscription;
+          subscription = authService.pollEmailVerification(email).listen(
+            (isPending) async {
+              if (!isPending && mounted) { // Verification is complete
+                // Cancel subscription
+                await subscription?.cancel();
+                
+                // Check if we're already logged in
+                if (FirebaseAuth.instance.currentUser != null) {
                   Navigator.pushReplacementNamed(context, '/');
+                } else {
+                  // Try to log in again
+                  try {
+                    await authService.signIn(email, password);
+                    if (mounted) {
+                      Navigator.pushReplacementNamed(context, '/');
+                    }
+                  } catch (e) {
+                    print('Error during auto-login: $e');
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Verification successful. Please try logging in again.'),
+                          backgroundColor: Colors.orange,
+                        ),
+                      );
+                    }
+                  }
                 }
               }
             },
-            codeAutoRetrievalTimeout: (verificationId) {},
+            onError: (e) {
+              print('Error polling verification status: $e');
+              subscription?.cancel();
+            },
+            onDone: () {
+              subscription?.cancel();
+            },
           );
         } else {
+          // No 2FA required, proceed with login
           if (mounted) {
             Navigator.pushReplacementNamed(context, '/');
           }
@@ -148,6 +164,15 @@ class _LoginScreenState extends State<LoginScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(_getErrorMessage(e.code)),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error signing in: $e'),
             backgroundColor: Colors.redAccent,
           ),
         );

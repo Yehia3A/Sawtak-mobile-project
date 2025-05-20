@@ -25,7 +25,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
-  final _phoneController = TextEditingController();
 
   @override
   void dispose() {
@@ -34,7 +33,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmController.dispose();
-    _phoneController.dispose();
     super.dispose();
   }
 
@@ -77,7 +75,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
         _passwordController.text.trim(),
         city: _selectedCity!,
         area: _selectedArea!,
-        phone: '+20${_phoneController.text.trim()}',
       );
 
       // 3) Navigate to the root
@@ -234,27 +231,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             borderSide: BorderSide.none,
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      // Phone Number Field
-                      TextFormField(
-                        controller: _phoneController,
-                        decoration: const InputDecoration(
-                          hintText: 'Phone Number',
-                          prefixText: '+20 ',
-                          counterText: '',
-                        ),
-                        keyboardType: TextInputType.phone,
-                        maxLength: 10,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Enter your phone number';
-                          }
-                          if (!RegExp(r'^1[0-9]{9}').hasMatch(value)) {
-                            return 'Enter a valid Egyptian phone number';
-                          }
-                          return null;
-                        },
                       ),
                       const SizedBox(height: 16),
 

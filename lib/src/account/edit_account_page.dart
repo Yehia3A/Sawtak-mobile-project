@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../services/user.serivce.dart';
+import '../services/auth.service.dart';
 import '../data/egypt_locations.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -15,18 +15,30 @@ class _EditAccountPageState extends State<EditAccountPage> {
   final _formKey = GlobalKey<FormState>();
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
+  final _emailController = TextEditingController();
   bool _isLoading = false;
-  final UserService _userService = UserService();
   String? _selectedCity;
   String? _selectedArea;
-  final _phoneController = TextEditingController();
   bool _is2faEnabled = false;
   bool _is2faLoading = false;
+  bool _isVerificationPending = false;
+  final AuthService _authService = AuthService();
 
   @override
   void initState() {
     super.initState();
     _loadUserDetails();
+    _checkVerificationStatus();
+  }
+
+  Future<void> _checkVerificationStatus() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user?.email != null) {
+      final isPending = await _authService.isEmailVerificationPending(user!.email!);
+      if (mounted) {
+        setState(() => _isVerificationPending = isPending);
+      }
+    }
   }
 
   Future<void> _loadUserDetails() async {
@@ -40,9 +52,9 @@ class _EditAccountPageState extends State<EditAccountPage> {
           setState(() {
             _firstNameController.text = data['firstName'] ?? '';
             _lastNameController.text = data['lastName'] ?? '';
+            _emailController.text = user.email ?? '';
             _selectedCity = data['city'];
             _selectedArea = data['area'];
-            _phoneController.text = (data['phone'] ?? '').replaceFirst('+20', '');
             _is2faEnabled = data['is2faEnabled'] ?? false;
           });
         }
@@ -63,111 +75,133 @@ class _EditAccountPageState extends State<EditAccountPage> {
   Future<void> _saveChanges() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      try {
-        await _userService.updateUser(user.uid, {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .update({
           'firstName': _firstNameController.text,
           'lastName': _lastNameController.text,
           'city': _selectedCity,
           'area': _selectedArea,
-          'phone': '+20${_phoneController.text.trim()}',
         });
+        if (mounted) {
+          Navigator.pop(context);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Account details updated')),
-        );
-        Navigator.pop(context);
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
+          SnackBar(content: Text('Error updating profile: $e')),
         );
       }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
-    setState(() => _isLoading = false);
   }
 
   Future<void> _toggle2FA(bool value) async {
-    setState(() => _is2faLoading = true);
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-    if (value) {
-      // Enable 2FA: verify phone
-      final phone = '+20${_phoneController.text.trim()}';
-      if (phone.isEmpty) {
+    if (_isVerificationPending) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please enter your phone number first.')),
+          const SnackBar(
+            content: Text('Please verify your email to enable 2FA. Check your inbox and click the verification link.'),
+            duration: Duration(seconds: 5),
+          ),
         );
-        setState(() => _is2faLoading = false);
-        return;
       }
-      await FirebaseAuth.instance.verifyPhoneNumber(
-        phoneNumber: phone,
-        verificationCompleted: (PhoneAuthCredential credential) async {
-          await user.linkWithCredential(credential);
-          await FirebaseFirestore.instance.collection('users').doc(user.uid).update({'is2faEnabled': true});
-          setState(() => _is2faEnabled = true);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('2FA activated successfully.')),
-          );
-        },
-        verificationFailed: (e) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Verification failed: ${e.message ?? e.code}')),
-          );
-        },
-        codeSent: (verificationId, resendToken) async {
-          final code = await showDialog<String>(
-            context: context,
-            builder: (context) {
-              final controller = TextEditingController();
-              return AlertDialog(
-                title: const Text('Enter OTP'),
-                content: TextField(
-                  controller: controller,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'OTP Code'),
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(controller.text),
-                    child: const Text('Verify'),
-                  ),
-                ],
-              );
-            },
-          );
-          if (code != null && code.isNotEmpty) {
-            final credential = PhoneAuthProvider.credential(
-              verificationId: verificationId,
-              smsCode: code,
-            );
-            await user.linkWithCredential(credential);
-            await FirebaseFirestore.instance.collection('users').doc(user.uid).update({'is2faEnabled': true});
-            setState(() => _is2faEnabled = true);
+      return;
+    }
+
+    if (!value) {
+      // Disable 2FA
+      try {
+        setState(() => _is2faLoading = true);
+        final user = FirebaseAuth.instance.currentUser;
+        if (user != null) {
+          await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+            'is2faEnabled': false,
+            'twoFactorMethod': null,
+            'verifiedEmail': null,
+          });
+          setState(() => _is2faEnabled = false);
+          if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('2FA activated successfully.')),
+              const SnackBar(content: Text('2FA has been disabled')),
+            );
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error disabling 2FA: $e')),
+          );
+        }
+      } finally {
+        setState(() => _is2faLoading = false);
+      }
+      return;
+    }
+
+    // Enable 2FA
+    try {
+      setState(() => _is2faLoading = true);
+      
+      final email = _emailController.text.trim();
+      if (email.isEmpty) {
+        throw Exception('No email address available');
+      }
+
+      // Send verification email (no password needed for activation)
+      await _authService.sendEmailVerification(email, isLogin: false);
+      
+      // Update verification pending status
+      setState(() => _isVerificationPending = true);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Verification email sent. Please check your inbox and click the verification link.'),
+            duration: Duration(seconds: 5),
+          ),
+        );
+      }
+
+      // Start polling for verification
+      _authService.pollEmailVerification(email).listen(
+        (isVerified) {
+          if (isVerified && mounted) {
+            setState(() {
+              _isVerificationPending = false;
+              _is2faEnabled = true;
+            });
+            
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Email verified and 2FA has been enabled!'),
+                duration: Duration(seconds: 3),
+              ),
             );
           }
         },
-        codeAutoRetrievalTimeout: (verificationId) {},
+        onError: (e) {
+          print('Error polling verification status: $e');
+        },
       );
-    } else {
-      // Disable 2FA
-      await FirebaseFirestore.instance.collection('users').doc(user.uid).update({'is2faEnabled': false});
-      setState(() => _is2faEnabled = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('2FA deactivated.')),
-      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error enabling 2FA: $e')),
+        );
+      }
+      setState(() => _isVerificationPending = false);
+    } finally {
+      setState(() => _is2faLoading = false);
     }
-    setState(() => _is2faLoading = false);
-  }
-
-  @override
-  void dispose() {
-    _firstNameController.dispose();
-    _lastNameController.dispose();
-    _phoneController.dispose();
-    super.dispose();
   }
 
   @override
@@ -176,24 +210,31 @@ class _EditAccountPageState extends State<EditAccountPage> {
       appBar: AppBar(title: const Text('Edit Account')),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Padding(
+          : SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Form(
                 key: _formKey,
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     TextFormField(
                       controller: _firstNameController,
                       decoration: const InputDecoration(labelText: 'First Name'),
                       validator: (value) =>
-                          (value == null || value.isEmpty) ? 'Enter first name' : null,
+                          value?.isEmpty ?? true ? 'Required' : null,
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _lastNameController,
                       decoration: const InputDecoration(labelText: 'Last Name'),
                       validator: (value) =>
-                          (value == null || value.isEmpty) ? 'Enter last name' : null,
+                          value?.isEmpty ?? true ? 'Required' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _emailController,
+                      decoration: const InputDecoration(labelText: 'Email'),
+                      enabled: false, // Email can't be changed here
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
@@ -226,57 +267,41 @@ class _EditAccountPageState extends State<EditAccountPage> {
                       onChanged: (value) => setState(() => _selectedArea = value),
                       decoration: const InputDecoration(labelText: 'Area'),
                     ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _phoneController,
-                      decoration: const InputDecoration(
-                        labelText: 'Phone Number',
-                        prefixText: '+20 ',
-                        counterText: '',
-                      ),
-                      keyboardType: TextInputType.phone,
-                      maxLength: 10,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Enter your phone number';
-                        }
-                        if (!RegExp(r'^1[0-9]{9}?$').hasMatch(value)) {
-                          return 'Enter a valid Egyptian phone number';
-                        }
-                        return null;
-                      },
-                    ),
                     const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: _saveChanges,
-                      child: const Text('Save Changes'),
-                    ),
-                    const SizedBox(height: 16),
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('2FA'),
-                        const SizedBox(width: 8),
-                        Switch(
-                          value: _is2faEnabled,
-                          onChanged: _is2faLoading ? null : (val) async {
-                            // If phone number changed, require re-verification
-                            final user = FirebaseAuth.instance.currentUser;
-                            final userDoc = await FirebaseFirestore.instance.collection('users').doc(user!.uid).get();
-                            final data = userDoc.data();
-                            final savedPhone = (data?['phone'] ?? '').replaceFirst('+20', '');
-                            if (val && _phoneController.text.trim() != savedPhone) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Please save your new phone number first.')),
-                              );
-                              return;
-                            }
-                            await _toggle2FA(val);
-                          },
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Two-Factor Authentication (Email)'),
+                              if (_isVerificationPending)
+                                const Text(
+                                  'Verification pending. Check your email.',
+                                  style: TextStyle(
+                                    color: Colors.orange,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
-                        if (_is2faLoading) const SizedBox(width: 8),
-                        if (_is2faLoading) const CircularProgressIndicator(strokeWidth: 2),
+                        Switch(
+                          value: _is2faEnabled || _isVerificationPending,
+                          onChanged: _is2faLoading ? null : _toggle2FA,
+                        ),
                       ],
+                    ),
+                    if (_is2faLoading)
+                      const Center(child: CircularProgressIndicator()),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _saveChanges,
+                        child: const Text('Save Changes'),
+                      ),
                     ),
                   ],
                 ),
