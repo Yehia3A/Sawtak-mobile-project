@@ -12,3 +12,19 @@
   - Added error handling for unauthenticated users.
   - Fixed onTokenRefresh to use instance access (_fcm.onTokenRefresh).
 - Fixed sendNotificationToAll usage in posts.service.dart to use positional arguments for title and body, matching NotificationService signature. 
+- Added a 'Show Ads' card to both HomeGovernment (lib/src/gov/home_gov.dart) and HomeCitizen (lib/src/citizen/home_citizen.dart). This card navigates to CheckAdsScreen with showAcceptedOnly=true, displaying only accepted ads.
+- Added a showAcceptedOnly flag to CheckAdsScreen (lib/src/screens/check_ads_screen.dart). When true, it uses AdvertisementService.getAcceptedRequests() to stream only accepted ads.
+- AdvertisementService (lib/src/services/advertisement_service.dart) now includes getAcceptedRequests() for streaming accepted ads.
+- Added city and area fields to the report creation flow for citizens.
+  - Updated lib/src/models/report.dart to include city and area fields.
+  - Updated lib/src/services/report.service.dart to handle city and area.
+  - Updated lib/src/providers/report_provider.dart to manage city/area state and selection.
+  - Updated lib/src/citizen/report_screen.dart to add dropdowns for city and area, using data/egypt_locations.dart.
+- City and area are now displayed in the admin report details in lib/src/gov/show_reports.dart.
+- Added AnalyticsScreen for government admin:
+  - Shows bar chart of report counts per city.
+  - Allows city selection and shows bar chart of report counts per area in the selected city.
+  - Uses fl_chart for visualization.
+  - Added analytics methods to ReportProvider.
+  - Linked AnalyticsScreen from Analytics card in home_gov.dart.
+- Emergency button in the top nav bar now shows a dropdown with emergency numbers (911, 122, 123, 125) instead of navigating to another screen. 

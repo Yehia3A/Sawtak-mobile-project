@@ -26,6 +26,8 @@ class ReportService {
     String? audioPath,
     required String userId,
     required String userName,
+    required String city,
+    required String area,
   }) async {
     try {
       final reportId = const Uuid().v4();
@@ -40,6 +42,8 @@ class ReportService {
         'userName': userName,
         'status': 'Pending',
         'createdAt': FieldValue.serverTimestamp(),
+        'city': city,
+        'area': area,
       };
 
       await _firestore.collection(_reportsCollection).doc(reportId).set(report);

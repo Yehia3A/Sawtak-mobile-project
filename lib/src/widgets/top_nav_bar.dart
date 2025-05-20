@@ -131,15 +131,49 @@ class TopNavBar extends StatelessWidget {
                   color: Colors.red.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: IconButton(
+                child: PopupMenuButton<int>(
                   icon: const Icon(
                     Icons.emergency,
                     color: Colors.white,
                     size: 28,
                   ),
-                  onPressed:
-                      () => Navigator.pushNamed(context, '/emergency-numbers'),
                   tooltip: 'Emergency Numbers',
+                  color: Colors.white,
+                  itemBuilder:
+                      (context) => [
+                        PopupMenuItem<int>(
+                          value: 911,
+                          child: ListTile(
+                            title: const Text('911'),
+                            subtitle: const Text('Worldwide Emergency'),
+                            onTap: () {},
+                          ),
+                        ),
+                        PopupMenuItem<int>(
+                          value: 122,
+                          child: ListTile(
+                            title: const Text('122'),
+                            subtitle: const Text('Emergency'),
+                            onTap: () {},
+                          ),
+                        ),
+                        PopupMenuItem<int>(
+                          value: 123,
+                          child: ListTile(
+                            title: const Text('123'),
+                            subtitle: const Text('Ambulance'),
+                            onTap: () {},
+                          ),
+                        ),
+                        PopupMenuItem<int>(
+                          value: 125,
+                          child: ListTile(
+                            title: const Text('125'),
+                            subtitle: const Text('Fire Brigade'),
+                            onTap: () {},
+                          ),
+                        ),
+                      ],
                 ),
               ),
               const SizedBox(width: 8),

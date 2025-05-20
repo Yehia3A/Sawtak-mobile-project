@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth.service.dart';
 import '../services/user.serivce.dart';
+import '../data/egypt_locations.dart';
 
 class SignUpScreen extends StatefulWidget {
   static const routeName = '/signup';
@@ -15,6 +16,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
   String? _role;
   bool _loading = false;
+  String? _selectedCity;
+  String? _selectedArea;
 
   // Controllers
   final _firstNameController = TextEditingController();
@@ -41,7 +44,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
       ).showSnackBar(const SnackBar(content: Text('Please choose a role')));
       return;
     }
-
+    if (_selectedCity == null || _selectedCity!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a city')),
+      );
+      return;
+    }
+    if (_selectedArea == null || _selectedArea!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select an area')),
+      );
+      return;
+    }
     setState(() => _loading = true);
     try {
       // 1) Sign up with Firebase Auth
@@ -59,6 +73,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
         _firstNameController.text.trim(),
         _lastNameController.text.trim(),
         _passwordController.text.trim(),
+        city: _selectedCity!,
+        area: _selectedArea!,
       );
 
       // 3) Navigate to the root
@@ -161,6 +177,62 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         ),
                       ),
                       const SizedBox(height: 24),
+
+                      // City Dropdown
+                      DropdownButtonFormField<String>(
+                        value: _selectedCity,
+                        hint: const Text('Select City'),
+                        items: getAllCities()
+                            .map((city) => DropdownMenuItem(
+                                  value: city,
+                                  child: Text(city),
+                                ))
+                            .toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedCity = value;
+                            _selectedArea = null;
+                          });
+                        },
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: Colors.white70,
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 16,
+                            horizontal: 20,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(30),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      // Area Dropdown
+                      DropdownButtonFormField<String>(
+                        value: _selectedArea,
+                        hint: const Text('Select Area'),
+                        items: (_selectedCity != null && _selectedCity!.isNotEmpty)
+                            ? getAreasForCity(_selectedCity!).map((area) => DropdownMenuItem(
+                                  value: area,
+                                  child: Text(area),
+                                )).toList()
+                            : [],
+                        onChanged: (value) => setState(() => _selectedArea = value),
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: Colors.white70,
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 16,
+                            horizontal: 20,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(30),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
 
                       // gradient Sign up button
                       SizedBox(

@@ -1,0 +1,6 @@
+flask
+torch
+transformers
+sentencepiece
+tiktoken
+flask_cors

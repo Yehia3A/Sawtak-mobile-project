@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gov_citizen_app/src/models/post.dart';
 import 'package:gov_citizen_app/src/services/posts.service.dart';
 import 'package:intl/intl.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class PostCard extends StatelessWidget {
   final Post post;
@@ -89,18 +90,61 @@ class PostCard extends StatelessWidget {
             ],
             if (post.type == PostType.announcement &&
                 post.attachments.isNotEmpty) ...[
-              const Text(
-                'Attachments:',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              ...post.attachments.map(
-                (attachment) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 2),
-                  child: Text(
-                    attachment.name,
-                    style: const TextStyle(color: Colors.blue),
-                  ),
-                ),
+              const SizedBox(height: 8),
+              const Text('', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 4),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children:
+                    post.attachments.map((attachment) {
+                      final isImage = attachment.type.toLowerCase().startsWith(
+                        'image/',
+                      );
+                      return Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child:
+                            isImage
+                                ? ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: CachedNetworkImage(
+                                    imageUrl: attachment.url,
+                                    fit: BoxFit.cover,
+                                    placeholder:
+                                        (context, url) => const Center(
+                                          child: CircularProgressIndicator(),
+                                        ),
+                                    errorWidget:
+                                        (context, url, error) => const Icon(
+                                          Icons.error,
+                                          color: Colors.red,
+                                        ),
+                                  ),
+                                )
+                                : Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(
+                                      Icons.picture_as_pdf,
+                                      color: Colors.red,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      attachment.name,
+                                      style: const TextStyle(fontSize: 10),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                ),
+                      );
+                    }).toList(),
               ),
             ],
             const SizedBox(height: 8),

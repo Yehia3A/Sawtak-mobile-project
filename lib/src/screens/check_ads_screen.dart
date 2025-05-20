@@ -5,13 +5,22 @@ import '../models/advertisement_request.dart';
 import '../services/advertisement_service.dart';
 import '../services/auth_service.dart';
 import '../data/egypt_locations.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'dart:io';
+import 'dart:typed_data';
 
 class CheckAdsScreen extends StatelessWidget {
   final _adService = AdvertisementService();
   final _authService = AuthService();
   final String userRole;
+  final bool showAcceptedOnly;
 
-  CheckAdsScreen({super.key, required this.userRole});
+  CheckAdsScreen({
+    super.key,
+    required this.userRole,
+    this.showAcceptedOnly = false,
+  });
 
   Future<void> _launchUrl(String url) async {
     if (await canLaunch(url)) {
@@ -34,7 +43,7 @@ class CheckAdsScreen extends StatelessWidget {
     final formKey = GlobalKey<FormState>();
     final titleController = TextEditingController();
     final descriptionController = TextEditingController();
-    final imageUrlController = TextEditingController();
+    final imageUrlController = TextEditingController(text: request.imageUrl);
     final linkController = TextEditingController();
 
     String? selectedCity = request.city;
@@ -42,6 +51,41 @@ class CheckAdsScreen extends StatelessWidget {
     List<String> availableAreas = getAreasForCity(request.city);
 
     bool isUpdating = false;
+
+    Future<void> _pickAndUploadImage() async {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(source: ImageSource.gallery);
+      if (picked != null) {
+        final bytes = await picked.readAsBytes();
+        final fileName = picked.name;
+        final folder = 'ads';
+        final ext = fileName.split('.').last.toLowerCase();
+        String contentType = 'application/octet-stream';
+        if (ext == 'jpg' || ext == 'jpeg') contentType = 'image/jpeg';
+        if (ext == 'png') contentType = 'image/png';
+        if (ext == 'webp') contentType = 'image/webp';
+        final metadata = SettableMetadata(
+          contentType: contentType,
+          customMetadata: <String, String>{
+            'Content-Disposition': 'inline',
+            'Cache-Control': 'public, max-age=31536000',
+            'Access-Control-Allow-Origin': '*',
+          },
+        );
+        final ref = FirebaseStorage.instance.ref().child(
+          '$folder/${DateTime.now().millisecondsSinceEpoch}_$fileName',
+        );
+        final uploadTask = ref.putData(bytes, metadata);
+        final snapshot = await uploadTask;
+        final url = await snapshot.ref.getDownloadURL();
+        imageUrlController.text = url;
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Image uploaded successfully!')),
+          );
+        }
+      }
+    }
 
     // Show the dialog
     return showDialog<void>(
@@ -92,20 +136,31 @@ class CheckAdsScreen extends StatelessWidget {
                           maxLines: 3,
                         ),
                         const SizedBox(height: 8),
-                        TextFormField(
-                          controller: imageUrlController,
-                          decoration: InputDecoration(
-                            labelText: 'Image URL',
-                            hintText: request.imageUrl,
-                          ),
-                          validator: (value) {
-                            if (value != null &&
-                                value.isNotEmpty &&
-                                !_isValidUrl(value)) {
-                              return 'Please enter a valid URL';
-                            }
-                            return null;
-                          },
+                        // Image upload section
+                        Row(
+                          children: [
+                            ElevatedButton.icon(
+                              onPressed: _pickAndUploadImage,
+                              icon: const Icon(Icons.upload_file),
+                              label: const Text('Upload Image'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.amber,
+                                foregroundColor: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            if (imageUrlController.text.isNotEmpty)
+                              Expanded(
+                                child: Image.network(
+                                  imageUrlController.text,
+                                  height: 60,
+                                  fit: BoxFit.cover,
+                                  errorBuilder:
+                                      (context, error, stackTrace) =>
+                                          const Icon(Icons.broken_image),
+                                ),
+                              ),
+                          ],
                         ),
                         const SizedBox(height: 8),
                         // City Dropdown
@@ -394,7 +449,9 @@ class CheckAdsScreen extends StatelessWidget {
                         ),
                         child: StreamBuilder<List<AdvertisementRequest>>(
                           stream:
-                              userRole == 'gov_admin'
+                              showAcceptedOnly
+                                  ? _adService.getAcceptedRequests()
+                                  : userRole == 'gov_admin'
                                   ? _adService.getPendingRequests()
                                   : _adService.getAdvertiserRequests(
                                     _authService.currentUser?.uid ?? '',

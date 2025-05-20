@@ -5,6 +5,7 @@ import '../services/auth.service.dart';
 import 'create_announcement_screen.dart';
 import 'create_poll_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'analytics_screen.dart';
 
 class HomeGovernment extends StatelessWidget {
   const HomeGovernment({super.key});
@@ -82,7 +83,12 @@ class HomeGovernment extends StatelessWidget {
                           'Analytics',
                           Icons.analytics,
                           () {
-                            // TODO: Implement analytics
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => AnalyticsScreen(),
+                              ),
+                            );
                           },
                         ),
                         _buildFeatureCard(
@@ -152,6 +158,23 @@ class HomeGovernment extends StatelessWidget {
                         ),
                         _buildFeatureCard(
                           context,
+                          'Show Ads',
+                          Icons.verified,
+                          () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => CheckAdsScreen(
+                                      userRole: 'gov_admin',
+                                      showAcceptedOnly: true,
+                                    ),
+                              ),
+                            );
+                          },
+                        ),
+                        _buildFeatureCard(
+                          context,
                           'Settings',
                           Icons.admin_panel_settings,
                           () {
@@ -166,11 +189,6 @@ class HomeGovernment extends StatelessWidget {
             ),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.pushNamed(context, '/chat'),
-        child: Icon(Icons.chat),
-        backgroundColor: Colors.amber,
       ),
     );
   }

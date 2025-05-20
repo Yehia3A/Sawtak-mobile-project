@@ -100,3 +100,11 @@ List<String> getAreasForCity(String city) {
 List<String> getAllCities() {
   return egyptLocations.map((loc) => loc.city).toList();
 }
+
+// Get map of cities to their areas
+Map<String, List<String>> getAreasMap() {
+  return {
+    for (var location in egyptLocations)
+      location.city: location.areas,
+  };
+}

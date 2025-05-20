@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart' as latlng;
 import '../providers/report_provider.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
+import '../data/egypt_locations.dart';
 
 class ReportScreen extends StatelessWidget {
   @override
@@ -86,6 +87,44 @@ class ReportForm extends StatelessWidget {
               ),
             ),
             SizedBox(height: 20),
+            DropdownButtonFormField<String>(
+              value: provider.selectedCity,
+              decoration: InputDecoration(
+                labelText: 'City',
+                border: OutlineInputBorder(),
+              ),
+              items:
+                  getAllCities()
+                      .map(
+                        (city) =>
+                            DropdownMenuItem(value: city, child: Text(city)),
+                      )
+                      .toList(),
+              onChanged: provider.selectCity,
+              validator: (value) => value == null ? 'Select a city' : null,
+            ),
+            SizedBox(height: 20),
+            DropdownButtonFormField<String>(
+              value: provider.selectedArea,
+              decoration: InputDecoration(
+                labelText: 'Area',
+                border: OutlineInputBorder(),
+              ),
+              items:
+                  provider.selectedCity == null
+                      ? []
+                      : getAreasForCity(provider.selectedCity!)
+                          .map(
+                            (area) => DropdownMenuItem(
+                              value: area,
+                              child: Text(area),
+                            ),
+                          )
+                          .toList(),
+              onChanged: provider.selectArea,
+              validator: (value) => value == null ? 'Select an area' : null,
+            ),
+            SizedBox(height: 20),
             Row(
               children: [
                 Expanded(
@@ -131,15 +170,16 @@ class ReportForm extends StatelessWidget {
                     scrollDirection: Axis.horizontal,
                     itemCount: provider.proofs.length,
                     itemBuilder: (context, i) {
-                      final path = provider.proofs[i];
+                      final proof = provider.proofs[i];
                       final isImage =
-                          path.endsWith('.png') ||
-                          path.endsWith('.jpg') ||
-                          path.endsWith('.jpeg');
+                          proof.type == 'image' ||
+                          proof.name.toLowerCase().endsWith('.png') ||
+                          proof.name.toLowerCase().endsWith('.jpg') ||
+                          proof.name.toLowerCase().endsWith('.jpeg');
                       Widget preview;
                       if (isImage) {
-                        preview = Image.network(
-                          path,
+                        preview = Image.memory(
+                          proof.bytes,
                           width: 80,
                           height: 80,
                           fit: BoxFit.cover,
@@ -177,19 +217,6 @@ class ReportForm extends StatelessWidget {
                                   color: Colors.white,
                                 ),
                               ),
-                            ),
-                          ),
-                          Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: IconButton(
-                              icon: Icon(
-                                Icons.download,
-                                size: 18,
-                                color: Colors.blue,
-                              ),
-                              onPressed: () => provider.downloadProof(path),
-                              tooltip: 'Download',
                             ),
                           ),
                         ],

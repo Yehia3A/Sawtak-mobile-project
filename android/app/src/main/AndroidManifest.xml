@@ -1,6 +1,9 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.sawtak.app">
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
-        android:label="gov_citizen_app"
+        android:label="Sawtak"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

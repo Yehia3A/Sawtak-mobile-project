@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:gov_citizen_app/src/screens/posts_screen.dart';
+import 'package:gov_citizen_app/src/screens/check_ads_screen.dart';
 import 'package:gov_citizen_app/src/services/user.serivce.dart';
 
 class HomeCitizen extends StatelessWidget {
@@ -105,6 +106,24 @@ class HomeCitizen extends StatelessWidget {
                                     currentUserId: user?.uid ?? '',
                                     currentUserName: firstName,
                                     userRole: 'citizen',
+                                  ),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(width: 16),
+                      _buildFeatureCard(
+                        context,
+                        'Show Ads',
+                        Icons.verified,
+                        () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => CheckAdsScreen(
+                                    userRole: 'citizen',
+                                    showAcceptedOnly: true,
                                   ),
                             ),
                           );
