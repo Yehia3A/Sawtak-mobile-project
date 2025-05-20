@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uuid/uuid.dart';
 import '../models/post.dart';
+import 'notification_service.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 
 class PostsService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -37,6 +39,12 @@ class PostsService {
           .collection(_postsCollection)
           .doc(post.id)
           .set(post.toMap());
+      // Send notification to all users
+      await NotificationService.instance.sendNotificationToAll(
+        'New Announcement',
+        title,
+        data: {'type': 'announcement', 'id': post.id},
+      );
       return post;
     } catch (e) {
       throw Exception('Failed to create announcement: $e');
@@ -85,6 +93,12 @@ class PostsService {
           .collection(_postsCollection)
           .doc(poll.id)
           .set(poll.toMap());
+      // Send notification to all users
+      await NotificationService.instance.sendNotificationToAll(
+        'New Poll',
+        title,
+        data: {'type': 'poll', 'id': poll.id},
+      );
       return poll;
     } catch (e) {
       throw Exception('Failed to create poll: $e');
