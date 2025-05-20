@@ -17,6 +17,7 @@ import '../advertiser/home_advertiser.dart';
 import '../screens/check_ads_screen.dart';
 import '../screens/chat_page.dart';
 import '../citizen/home_citizen.dart';
+import '../services/auth.service.dart';
 
 class MainLayout extends StatefulWidget {
   final List<Widget> pages;
@@ -39,6 +40,7 @@ class MainLayout extends StatefulWidget {
 class _MainLayoutState extends State<MainLayout> {
   int _currentIndex = 0;
   late List<Widget> _pages;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
@@ -50,7 +52,7 @@ class _MainLayoutState extends State<MainLayout> {
     if (widget.role == 'Gov Admin') {
       _pages = [
         const HomeGovernment(),
-        ShowReportsScreen(), // Show Reports as second tab
+        ShowReportsScreen(),
         ChatPage(),
         GovAdminProfile(),
         PostsScreen(
@@ -91,58 +93,299 @@ class _MainLayoutState extends State<MainLayout> {
     });
   }
 
+  Widget _buildDrawer() {
+    return Drawer(
+      backgroundColor: Colors.black,
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          DrawerHeader(
+            decoration: const BoxDecoration(color: Colors.black),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Sawtak',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  widget.role,
+                  style: const TextStyle(color: Colors.white70, fontSize: 16),
+                ),
+              ],
+            ),
+          ),
+          if (widget.role == 'Gov Admin') ...[
+            _buildDrawerItem(Icons.home, 'Home', 0),
+            _buildDrawerItem(Icons.visibility, 'Check Reports', 1),
+            _buildDrawerItem(Icons.chat, 'Citizens Messages', 2),
+            _buildDrawerItem(Icons.person, 'User Management', 3),
+            _buildDrawerItem(Icons.announcement, 'Posts', 4),
+          ] else if (widget.role == 'Advertiser') ...[
+            _buildDrawerItem(Icons.home, 'Home', 0),
+            _buildDrawerItem(Icons.visibility, 'Check your Ads', 1),
+            _buildDrawerItem(Icons.chat, 'Messages', 2),
+            _buildDrawerItem(Icons.person, 'Profile', 3),
+          ] else ...[
+            _buildDrawerItem(Icons.home, 'Home', 0),
+            _buildDrawerItem(Icons.report, 'Report a Problem', 1),
+            _buildDrawerItem(Icons.chat, 'Message Government', 2),
+            _buildDrawerItem(Icons.person, 'Profile', 3),
+            _buildDrawerItem(Icons.announcement, 'Posts', 4),
+          ],
+          const Divider(color: Colors.white24),
+          ListTile(
+            leading: const Icon(Icons.logout, color: Colors.white),
+            title: const Text('Logout', style: TextStyle(color: Colors.white)),
+            onTap: () async {
+              await AuthService().signOut();
+              if (mounted) {
+                Navigator.pushReplacementNamed(context, '/welcome');
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDrawerItem(IconData icon, String title, int index) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.white),
+      title: Text(title, style: const TextStyle(color: Colors.white)),
+      selected: _currentIndex == index,
+      selectedColor: Colors.amber,
+      onTap: () {
+        _onTabTapped(index);
+        _scaffoldKey.currentState?.closeDrawer();
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
-    return Container(
-      color: Colors.black, // Replace with your app background
-      child: SafeArea(
-        top: false,
-        bottom: false,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: Padding(
-                padding: const EdgeInsets.only(
-                  left: 16,
-                  right: 16,
-                  top: 80, // Extra top padding for the TopNavBar
-                  bottom: 80, // Extra bottom padding for the BottomNavBar
+    return Scaffold(
+      key: _scaffoldKey,
+      backgroundColor: Colors.black,
+      drawer: _buildDrawer(),
+      body: Stack(
+        children: [
+          // Background image
+          Image.asset(
+            'assets/homepage.jpg',
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: double.infinity,
+          ),
+          // Dark overlay
+          Container(color: Colors.black.withOpacity(0.7)),
+          // Content
+          SafeArea(
+            child: Column(
+              children: [
+                // Top Bar
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.menu, color: Colors.white),
+                        onPressed:
+                            () => _scaffoldKey.currentState?.openDrawer(),
+                      ),
+                      const Text(
+                        'Sawtak',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        icon: const Icon(Icons.emergency, color: Colors.red),
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                backgroundColor: Colors.black.withOpacity(0.9),
+                                title: const Row(
+                                  children: [
+                                    Icon(Icons.emergency, color: Colors.red),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'Emergency Numbers',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                content: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    _buildEmergencyNumber(
+                                      'Police',
+                                      '122',
+                                      Icons.local_police,
+                                      Colors.blue,
+                                    ),
+                                    const SizedBox(height: 12),
+                                    _buildEmergencyNumber(
+                                      'Ambulance',
+                                      '123',
+                                      Icons.medical_services,
+                                      Colors.red,
+                                    ),
+                                    const SizedBox(height: 12),
+                                    _buildEmergencyNumber(
+                                      'Fire Department',
+                                      '180',
+                                      Icons.fire_truck,
+                                      Colors.orange,
+                                    ),
+                                    const SizedBox(height: 12),
+                                    _buildEmergencyNumber(
+                                      'Tourist Police',
+                                      '126',
+                                      Icons.tour,
+                                      Colors.green,
+                                    ),
+                                    const SizedBox(height: 12),
+                                    _buildEmergencyNumber(
+                                      'Electricity Emergency',
+                                      '121',
+                                      Icons.electric_bolt,
+                                      Colors.yellow,
+                                    ),
+                                    const SizedBox(height: 12),
+                                    _buildEmergencyNumber(
+                                      'Gas Emergency',
+                                      '129',
+                                      Icons.gas_meter,
+                                      Colors.orange,
+                                    ),
+                                  ],
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed:
+                                        () => Navigator.of(context).pop(),
+                                    child: const Text(
+                                      'Close',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.notifications,
+                          color: Colors.white,
+                        ),
+                        onPressed: () {
+                          // Notifications functionality
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.logout, color: Colors.white),
+                        onPressed: () async {
+                          await AuthService().signOut();
+                          if (mounted) {
+                            Navigator.pushReplacementNamed(context, '/welcome');
+                          }
+                        },
+                      ),
+                    ],
+                  ),
                 ),
-                child: _pages[_currentIndex],
+                // Main Content
+                Expanded(child: _pages[_currentIndex]),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmergencyNumber(
+    String service,
+    String number,
+    IconData icon,
+    Color color,
+  ) {
+    return InkWell(
+      onTap: () {
+        // You can add functionality to call the number here
+        Navigator.of(context).pop();
+      },
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: color.withOpacity(0.3)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, color: color),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    service,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    number,
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
               ),
             ),
-            // Positioned(
-            //   top: 0,
-            //   left: 0,
-            //   right: 0,
-            //   child: FutureBuilder<String>(
-            //     future:
-            //         user != null
-            //             ? UserService().fetchUserFirstName(user.uid)
-            //             : Future.value(''),
-            //     builder: (context, snapshot) {
-            //       final name =
-            //           (snapshot.connectionState == ConnectionState.done &&
-            //                   snapshot.hasData)
-            //               ? snapshot.data!
-            //               : '';
-            //       return FloatingTopBar();
-            //     },
-            //   ),
-            // ),
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: CustomBottomNavBar(
-                currentIndex: _currentIndex,
-                onTap: _onTabTapped,
-                role: widget.role,
-              ),
-            ),
-            // top bar
-            Positioned(top: 0, left: 0, right: 0, child: TopNavBar()),
+            Icon(Icons.phone, color: color),
           ],
         ),
       ),
