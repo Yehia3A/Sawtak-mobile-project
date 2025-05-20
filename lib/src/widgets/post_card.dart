@@ -12,6 +12,7 @@ class PostCard extends StatelessWidget {
   final VoidCallback? onDelete;
   final String userRole;
   final VoidCallback onTap;
+  final VoidCallback? onEdit;
 
   const PostCard({
     super.key,
@@ -22,6 +23,7 @@ class PostCard extends StatelessWidget {
     required this.onDelete,
     required this.userRole,
     required this.onTap,
+    this.onEdit,
   });
 
   @override
@@ -74,6 +76,13 @@ class PostCard extends StatelessWidget {
                       ],
                     ),
                   ),
+                  if (userRole == 'gov_admin') ...[
+                    IconButton(
+                      icon: const Icon(Icons.edit, color: Colors.white),
+                      onPressed: () => _showEditDialog(context),
+                      tooltip: 'Edit Announcement',
+                    ),
+                  ],
                   if (onDelete != null)
                     IconButton(
                       icon: const Icon(Icons.delete, color: Colors.white),
@@ -162,5 +171,119 @@ class PostCard extends StatelessWidget {
 
   void _showVoteDialog(BuildContext context) {
     // Implementation of _showVoteDialog method
+  }
+
+  void _showEditDialog(BuildContext context) {
+    final titleController = TextEditingController(text: post.title);
+    final contentController = TextEditingController(text: post.content);
+    String? errorMessage;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              backgroundColor: Colors.black87,
+              title: const Text(
+                'Edit Announcement',
+                style: TextStyle(color: Colors.white),
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (errorMessage != null)
+                      SelectableText.rich(
+                        TextSpan(
+                          text: errorMessage,
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                      ),
+                    TextField(
+                      controller: titleController,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: const InputDecoration(
+                        labelText: 'Title',
+                        labelStyle: TextStyle(color: Colors.white),
+                        enabledBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.white54),
+                        ),
+                        focusedBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.amber),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: contentController,
+                      style: const TextStyle(color: Colors.white),
+                      maxLines: 4,
+                      decoration: const InputDecoration(
+                        labelText: 'Content',
+                        labelStyle: TextStyle(color: Colors.white),
+                        enabledBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.white54),
+                        ),
+                        focusedBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.amber),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.amber,
+                  ),
+                  onPressed: () async {
+                    final title = titleController.text.trim();
+                    final content = contentController.text.trim();
+                    if (title.isEmpty || content.isEmpty) {
+                      setState(() {
+                        errorMessage = 'Title and content cannot be empty.';
+                      });
+                      return;
+                    }
+                    final updates = <String, dynamic>{};
+                    if (title != post.title) updates['title'] = title;
+                    if (content != post.content) updates['content'] = content;
+                    if (updates.isNotEmpty) {
+                      try {
+                        await postsService.updateAnnouncement(
+                          post.id,
+                          updates,
+                          userRole,
+                        );
+                        if (context.mounted) Navigator.pop(context);
+                      } catch (e) {
+                        setState(() {
+                          errorMessage = 'Error: $e';
+                        });
+                      }
+                    } else {
+                      Navigator.pop(context);
+                    }
+                  },
+                  child: const Text(
+                    'Update',
+                    style: TextStyle(color: Colors.black),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 }

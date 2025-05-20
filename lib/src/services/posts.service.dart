@@ -433,4 +433,27 @@ class PostsService {
 
   // Helper: Detect if text is Arabic
   bool _isArabic(String text) => RegExp(r'[\u0600-\u06FF]').hasMatch(text);
+
+  /// Update an existing announcement (only gov_admin, only for announcements)
+  Future<void> updateAnnouncement(
+    String announcementId,
+    Map<String, dynamic> updates,
+    String userRole,
+  ) async {
+    if (userRole != 'gov_admin') {
+      throw Exception(
+        'Only government administrators can update announcements',
+      );
+    }
+    final docRef = _firestore.collection(_postsCollection).doc(announcementId);
+    final doc = await docRef.get();
+    if (!doc.exists) throw Exception('Announcement not found');
+    final data = doc.data() as Map<String, dynamic>;
+    if (data['type'] != 'announcement') {
+      throw Exception('Only announcements can be updated with this method');
+    }
+    // Remove empty/null values from updates
+    updates.removeWhere((key, value) => value == null || value == '');
+    await docRef.update(updates);
+  }
 }
