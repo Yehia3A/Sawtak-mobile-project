@@ -167,7 +167,6 @@ class _ChatPageState extends State<ChatPage> {
               ),
             ),
             Padding(
-<<<<<<< Updated upstream
               padding: const EdgeInsets.all(12),
               child: Container(
                 decoration: BoxDecoration(
@@ -175,27 +174,11 @@ class _ChatPageState extends State<ChatPage> {
                   borderRadius: BorderRadius.circular(25),
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 8),
-=======
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.85),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.06),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
->>>>>>> Stashed changes
                 child: Row(
                   children: [
                     Expanded(
                       child: TextField(
                         controller: _controller,
-<<<<<<< Updated upstream
                         style: const TextStyle(color: Colors.white),
                         decoration: const InputDecoration(
                           hintText: 'Type a message',
@@ -207,23 +190,6 @@ class _ChatPageState extends State<ChatPage> {
                     ),
                     IconButton(
                       icon: const Icon(Icons.send, color: Colors.white),
-=======
-                        decoration: const InputDecoration(
-                          hintText: 'Type a message',
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                        ),
-                        style: const TextStyle(fontSize: 16),
-                        minLines: 1,
-                        maxLines: 4,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.send, color: Color(0xFFA77A37)),
->>>>>>> Stashed changes
                       onPressed: () async {
                         if (_controller.text.trim().isEmpty) return;
                         await _chatService.sendMessage(

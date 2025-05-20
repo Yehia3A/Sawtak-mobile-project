@@ -122,146 +122,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     ),
                     const SizedBox(height: 32),
 
-<<<<<<< Updated upstream
-                Form(
-                  key: _formKey,
-                  child: Column(
-                    children: [
-                      _buildField(_firstNameController, 'First Name'),
-                      const SizedBox(height: 16),
-                      _buildField(_lastNameController, 'Last Name'),
-                      const SizedBox(height: 16),
-                      _buildField(
-                        _emailController,
-                        'Email',
-                        keyboardType: TextInputType.emailAddress,
-                      ),
-                      const SizedBox(height: 16),
-                      _buildField(
-                        _passwordController,
-                        'Password',
-                        obscureText: true,
-                      ),
-                      const SizedBox(height: 16),
-                      _buildField(
-                        _confirmController,
-                        'Confirm Password',
-                        obscureText: true,
-                      ),
-                      const SizedBox(height: 16),
-
-                      // role dropdown
-                      DropdownButtonFormField<String>(
-                        value: _role,
-                        hint: const Text('Choose your role'),
-                        items: const [
-                          DropdownMenuItem(
-                            value: 'Citizen',
-                            child: Text('Citizen'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'Gov Admin',
-                            child: Text('Gov Admin'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'Advertiser',
-                            child: Text('Advertiser'),
-                          ),
-                        ],
-                        onChanged: (v) => setState(() => _role = v),
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: Colors.white70,
-                          contentPadding: const EdgeInsets.symmetric(
-                            vertical: 16,
-                            horizontal: 20,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
-                            borderSide: BorderSide.none,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // City Dropdown
-                      DropdownButtonFormField<String>(
-                        value: _selectedCity,
-                        hint: const Text('Select City'),
-                        items: getAllCities()
-                            .map((city) => DropdownMenuItem(
-                                  value: city,
-                                  child: Text(city),
-                                ))
-                            .toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedCity = value;
-                            _selectedArea = null;
-                          });
-                        },
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: Colors.white70,
-                          contentPadding: const EdgeInsets.symmetric(
-                            vertical: 16,
-                            horizontal: 20,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
-                            borderSide: BorderSide.none,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      // Area Dropdown
-                      DropdownButtonFormField<String>(
-                        value: _selectedArea,
-                        hint: const Text('Select Area'),
-                        items: (_selectedCity != null && _selectedCity!.isNotEmpty)
-                            ? getAreasForCity(_selectedCity!).map((area) => DropdownMenuItem(
-                                  value: area,
-                                  child: Text(area),
-                                )).toList()
-                            : [],
-                        onChanged: (value) => setState(() => _selectedArea = value),
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: Colors.white70,
-                          contentPadding: const EdgeInsets.symmetric(
-                            vertical: 16,
-                            horizontal: 20,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
-                            borderSide: BorderSide.none,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // gradient Sign up button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton(
-                          onPressed: _loading ? null : _submit,
-                          style: ElevatedButton.styleFrom(
-                            padding: EdgeInsets.zero,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                          ),
-                          child: Ink(
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [
-                                  Color(0xFFF2C94C), // gold
-                                  Color(0xFF333333), // dark
-                                ],
-                                begin: Alignment.centerLeft,
-                                end: Alignment.centerRight,
-=======
                     Form(
                       key: _formKey,
                       child: Column(
@@ -287,7 +147,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               ),
                               contentPadding: const EdgeInsets.symmetric(
                                 vertical: 16,
->>>>>>> Stashed changes
                               ),
                             ),
                             validator: (value) {
@@ -433,39 +292,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               }
                               if (value != _passwordController.text) {
                                 return 'Passwords do not match';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Phone Field
-                          TextFormField(
-                            controller: _phoneController,
-                            keyboardType: TextInputType.phone,
-                            style: const TextStyle(color: Colors.white),
-                            decoration: InputDecoration(
-                              hintText: 'Phone Number',
-                              hintStyle: TextStyle(
-                                color: Colors.white.withOpacity(0.7),
-                              ),
-                              prefixIcon: const Icon(
-                                Icons.phone,
-                                color: Colors.white70,
-                              ),
-                              filled: true,
-                              fillColor: Colors.white.withOpacity(0.1),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide.none,
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                vertical: 16,
-                              ),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter your phone number';
                               }
                               return null;
                             },

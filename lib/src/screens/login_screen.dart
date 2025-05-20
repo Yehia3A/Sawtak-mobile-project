@@ -181,7 +181,6 @@ class _LoginScreenState extends State<LoginScreen>
         final userDoc =
             await FirebaseFirestore.instance.collection('users').doc(uid).get();
         final data = userDoc.data();
-<<<<<<< Updated upstream
 
         if (data != null && data['is2faEnabled'] == true) {
           // Check if there's already an active verification
@@ -252,50 +251,6 @@ class _LoginScreenState extends State<LoginScreen>
                 },
                 onDone: () {
                   subscription?.cancel();
-=======
-        if (data != null &&
-            data['is2faEnabled'] == true &&
-            data['phone'] != null &&
-            data['phone'].toString().isNotEmpty) {
-          final phone = data['phone'];
-          await FirebaseAuth.instance
-              .signOut(); // Sign out to allow phone verification
-          await FirebaseAuth.instance.verifyPhoneNumber(
-            phoneNumber: phone,
-            verificationCompleted: (PhoneAuthCredential credential) async {
-              await FirebaseAuth.instance.signInWithCredential(credential);
-              if (mounted) {
-                Navigator.pushReplacementNamed(context, '/');
-              }
-            },
-            verificationFailed: (e) {
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('2FA failed: ${e.message}')),
-                );
-              }
-            },
-            codeSent: (verificationId, resendToken) async {
-              final code = await showDialog<String>(
-                context: context,
-                builder: (context) {
-                  final controller = TextEditingController();
-                  return AlertDialog(
-                    title: const Text('Enter OTP'),
-                    content: TextField(
-                      controller: controller,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'OTP Code'),
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed:
-                            () => Navigator.of(context).pop(controller.text),
-                        child: const Text('Verify'),
-                      ),
-                    ],
-                  );
->>>>>>> Stashed changes
                 },
               );
         } else {
