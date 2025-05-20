@@ -108,11 +108,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                             if (idx < 0 || idx >= cityCounts.length)
                               return SizedBox();
                             return SideTitleWidget(
+                              axisSide: meta.axisSide,
                               child: Text(
                                 cityCounts.keys.elementAt(idx),
                                 style: TextStyle(fontSize: 10),
                               ),
-                              meta: meta,
                               space: 4,
                             );
                           },
@@ -213,11 +213,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                             if (idx < 0 || idx >= areaCounts.length)
                               return SizedBox();
                             return SideTitleWidget(
+                              axisSide: meta.axisSide,
                               child: Text(
                                 areaCounts.keys.elementAt(idx),
                                 style: TextStyle(fontSize: 10),
                               ),
-                              meta: meta,
                               space: 4,
                             );
                           },
