@@ -76,10 +76,12 @@ class _ChatPageState extends State<ChatPage> {
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
-          title: const Text('Chat'),
+          backgroundColor: Colors.black,
+          iconTheme: const IconThemeData(color: Colors.white),
+          title: const Text('Chat', style: TextStyle(color: Colors.white)),
           actions: [
             IconButton(
-              icon: const Icon(Icons.exit_to_app),
+              icon: const Icon(Icons.exit_to_app, color: Colors.white),
               onPressed: () async {
                 final confirm = await showEndChatDialog(context);
                 if (confirm) {
@@ -134,28 +136,39 @@ class _ChatPageState extends State<ChatPage> {
             ),
             Padding(
               padding: const EdgeInsets.all(12),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _controller,
-                      decoration: const InputDecoration(
-                        hintText: 'Type a message',
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.black,
+                  borderRadius: BorderRadius.circular(25),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _controller,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: const InputDecoration(
+                          hintText: 'Type a message',
+                          hintStyle: TextStyle(color: Colors.white70),
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.all(12),
+                        ),
                       ),
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.send),
-                    onPressed: () async {
-                      if (_controller.text.trim().isEmpty) return;
-                      await _chatService.sendMessage(
-                        _chat!.id,
-                        _controller.text.trim(),
-                      );
-                      _controller.clear();
-                    },
-                  ),
-                ],
+                    IconButton(
+                      icon: const Icon(Icons.send, color: Colors.white),
+                      onPressed: () async {
+                        if (_controller.text.trim().isEmpty) return;
+                        await _chatService.sendMessage(
+                          _chat!.id,
+                          _controller.text.trim(),
+                        );
+                        _controller.clear();
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -295,12 +308,13 @@ class _ChatPageAssignedState extends State<ChatPageAssigned> {
       ),
       child: Scaffold(
         backgroundColor: Colors.transparent,
-
         appBar: AppBar(
-          title: const Text('Chat'),
+          backgroundColor: Colors.black,
+          iconTheme: const IconThemeData(color: Colors.white),
+          title: const Text('Chat', style: TextStyle(color: Colors.white)),
           actions: [
             IconButton(
-              icon: const Icon(Icons.exit_to_app),
+              icon: const Icon(Icons.exit_to_app, color: Colors.white),
               onPressed: () async {
                 final confirm = await showEndChatDialog(context);
                 if (confirm) {
@@ -355,28 +369,39 @@ class _ChatPageAssignedState extends State<ChatPageAssigned> {
             ),
             Padding(
               padding: const EdgeInsets.all(12),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _controller,
-                      decoration: const InputDecoration(
-                        hintText: 'Type a message',
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.black,
+                  borderRadius: BorderRadius.circular(25),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _controller,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: const InputDecoration(
+                          hintText: 'Type a message',
+                          hintStyle: TextStyle(color: Colors.white70),
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.all(12),
+                        ),
                       ),
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.send),
-                    onPressed: () async {
-                      if (_controller.text.trim().isEmpty) return;
-                      await _chatService.sendMessage(
-                        widget.chatId,
-                        _controller.text.trim(),
-                      );
-                      _controller.clear();
-                    },
-                  ),
-                ],
+                    IconButton(
+                      icon: const Icon(Icons.send, color: Colors.white),
+                      onPressed: () async {
+                        if (_controller.text.trim().isEmpty) return;
+                        await _chatService.sendMessage(
+                          widget.chatId,
+                          _controller.text.trim(),
+                        );
+                        _controller.clear();
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
