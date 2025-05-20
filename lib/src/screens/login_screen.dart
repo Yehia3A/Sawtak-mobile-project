@@ -81,10 +81,52 @@ class _LoginScreenState extends State<LoginScreen>
 
   Future<void> _handleDeepLink(String link) async {
     try {
-      final success = await _authService.handleVerificationLink(link);
-      if (success && mounted) {
-        // Navigate to home page after successful verification
-        Navigator.pushReplacementNamed(context, '/');
+      // First check if this is a verification link
+      if (link.contains('oobCode=')) {
+        final success = await _authService.handleVerificationLink(link);
+        if (success && mounted) {
+          // Get the email from the link
+          final uri = Uri.parse(link);
+          final email = uri.queryParameters['email'];
+
+          if (email != null) {
+            // Get the stored password from Firestore
+            final verificationDoc =
+                await FirebaseFirestore.instance
+                    .collection('emailVerification')
+                    .doc(email)
+                    .get();
+
+            if (verificationDoc.exists) {
+              final data = verificationDoc.data();
+              final password = data?['password'] as String?;
+
+              if (password != null) {
+                // Try to sign in with the stored credentials
+                try {
+                  await _authService.signIn(email, password);
+                  if (mounted) {
+                    // Navigate to home page after successful login
+                    Navigator.pushReplacementNamed(context, '/');
+                    return;
+                  }
+                } catch (e) {
+                  print('Error during auto-login: $e');
+                }
+              }
+            }
+          }
+
+          // If auto-login fails, show a message
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Email verified. Please sign in again.'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+        }
       }
     } catch (e) {
       if (mounted) {

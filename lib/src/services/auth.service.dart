@@ -158,6 +158,14 @@ class AuthService {
           'password': FieldValue.delete(), // Clean up password
         });
 
+        // Ensure the user is still signed in after verification
+        if (_auth.currentUser == null) {
+          await _auth.signInWithEmailAndPassword(
+            email: email,
+            password: storedPassword,
+          );
+        }
+
         return true;
       }
 
