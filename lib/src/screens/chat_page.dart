@@ -103,7 +103,10 @@ class _ChatPageState extends State<ChatPage> {
                   }
                   final messages = snapshot.data!;
                   return ListView.builder(
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 16,
+                    ),
                     itemCount: messages.length,
                     itemBuilder: (context, index) {
                       final msg = messages[index];
@@ -112,21 +115,50 @@ class _ChatPageState extends State<ChatPage> {
                         alignment:
                             isMe ? Alignment.centerRight : Alignment.centerLeft,
                         child: Container(
-                          padding: const EdgeInsets.all(12),
-                          margin: const EdgeInsets.symmetric(vertical: 4),
+                          margin: const EdgeInsets.symmetric(vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          constraints: BoxConstraints(
+                            maxWidth: MediaQuery.of(context).size.width * 0.75,
+                          ),
                           decoration: BoxDecoration(
-                            color: isMe ? Color(0xFFEACE9F) : Color(0xFFA77A37),
-                            borderRadius: BorderRadius.circular(16),
+                            color:
+                                isMe
+                                    ? const Color(0xFFF9EBC8)
+                                    : Colors.white.withOpacity(0.85),
+                            borderRadius: BorderRadius.only(
+                              topLeft: const Radius.circular(18),
+                              topRight: const Radius.circular(18),
+                              bottomLeft: Radius.circular(isMe ? 18 : 6),
+                              bottomRight: Radius.circular(isMe ? 6 : 18),
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.07),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
                             border:
                                 isMe
                                     ? Border.all(
-                                      color: Color(0xFFA77A37),
-                                      width: 2,
+                                      color: const Color(0xFFA77A37),
+                                      width: 1.5,
                                     )
                                     : null,
                           ),
-
-                          child: Text(msg.content),
+                          child: Text(
+                            msg.content,
+                            style: TextStyle(
+                              color:
+                                  isMe
+                                      ? const Color(0xFF7A5A1E)
+                                      : Colors.black87,
+                              fontSize: 16,
+                            ),
+                          ),
                         ),
                       );
                     },
@@ -135,6 +167,7 @@ class _ChatPageState extends State<ChatPage> {
               ),
             ),
             Padding(
+<<<<<<< Updated upstream
               padding: const EdgeInsets.all(12),
               child: Container(
                 decoration: BoxDecoration(
@@ -142,11 +175,27 @@ class _ChatPageState extends State<ChatPage> {
                   borderRadius: BorderRadius.circular(25),
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 8),
+=======
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.85),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.06),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+>>>>>>> Stashed changes
                 child: Row(
                   children: [
                     Expanded(
                       child: TextField(
                         controller: _controller,
+<<<<<<< Updated upstream
                         style: const TextStyle(color: Colors.white),
                         decoration: const InputDecoration(
                           hintText: 'Type a message',
@@ -158,6 +207,23 @@ class _ChatPageState extends State<ChatPage> {
                     ),
                     IconButton(
                       icon: const Icon(Icons.send, color: Colors.white),
+=======
+                        decoration: const InputDecoration(
+                          hintText: 'Type a message',
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                        ),
+                        style: const TextStyle(fontSize: 16),
+                        minLines: 1,
+                        maxLines: 4,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.send, color: Color(0xFFA77A37)),
+>>>>>>> Stashed changes
                       onPressed: () async {
                         if (_controller.text.trim().isEmpty) return;
                         await _chatService.sendMessage(
