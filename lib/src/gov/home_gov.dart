@@ -6,6 +6,7 @@ import 'create_announcement_screen.dart';
 import 'create_poll_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'analytics_screen.dart';
+import 'manage_emergency_numbers.dart';
 
 class HomeGovernment extends StatelessWidget {
   const HomeGovernment({super.key});
@@ -181,6 +182,28 @@ class HomeGovernment extends StatelessWidget {
                             // TODO: Implement settings
                           },
                         ),
+                        Card(
+                          child: ListTile(
+                            leading: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.red.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(Icons.emergency, color: Colors.red),
+                            ),
+                            title: const Text('Manage Emergency Numbers'),
+                            subtitle: const Text('Add, edit, or remove emergency contact numbers'),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const ManageEmergencyNumbers(),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -196,7 +219,7 @@ class HomeGovernment extends StatelessWidget {
   Widget _buildStatCard(String title, String value, Color color) {
     return Expanded(
       child: Card(
-        color: Colors.white.withOpacity(0.9),
+        color: Colors.black.withOpacity(0.9),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -212,7 +235,7 @@ class HomeGovernment extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 title,
-                style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                style: const TextStyle(fontSize: 14, color: Colors.white),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -230,19 +253,23 @@ class HomeGovernment extends StatelessWidget {
   ) {
     return Card(
       elevation: 4,
-      color: Colors.white.withOpacity(0.9),
+      color: Colors.black.withOpacity(0.9),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 40, color: Theme.of(context).primaryColor),
+            Icon(icon, size: 40, color: Colors.white),
             const SizedBox(height: 8),
             Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
           ],
         ),

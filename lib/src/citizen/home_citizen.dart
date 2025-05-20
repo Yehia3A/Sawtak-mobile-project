@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:gov_citizen_app/src/screens/posts_screen.dart';
-import 'package:gov_citizen_app/src/screens/check_ads_screen.dart';
 import 'package:gov_citizen_app/src/services/user.serivce.dart';
+import 'package:flutter/rendering.dart';
 
 class HomeCitizen extends StatelessWidget {
   const HomeCitizen({super.key});
@@ -42,133 +43,44 @@ class HomeCitizen extends StatelessWidget {
                           color: Colors.white,
                         ),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.logout, color: Colors.white),
-                        onPressed: () async {
-                          await FirebaseAuth.instance.signOut();
-                          if (context.mounted) {
-                            Navigator.pushReplacementNamed(context, '/');
-                          }
-                        },
-                      ),
                     ],
                   ),
                 ),
-                // Feature Cards
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    children: [
-                      _buildFeatureCard(
-                        context,
-                        'Announcements',
-                        Icons.campaign,
-                        () async {
-                          final user = FirebaseAuth.instance.currentUser;
-                          final firstName =
+                // Main Content - Posts Screen with frosted glass effect
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      child: Container(
+                        color: Colors.white.withOpacity(0.10),
+                        child: FutureBuilder<String>(
+                          future:
                               user != null
-                                  ? await UserService().fetchUserFirstName(
-                                    user.uid,
-                                  )
-                                  : 'Anonymous';
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder:
-                                  (context) => PostsScreen(
-                                    currentUserId: user?.uid ?? '',
-                                    currentUserName: firstName,
-                                    userRole: 'citizen',
-                                    initialFilter: 'Announcements',
-                                  ),
-                            ),
-                          );
-                        },
+                                  ? UserService().fetchUserFirstName(user.uid)
+                                  : Future.value('Anonymous'),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Center(
+                                child: CircularProgressIndicator(),
+                              );
+                            }
+                            return PostsScreen(
+                              currentUserId: user?.uid ?? '',
+                              currentUserName: snapshot.data ?? 'Anonymous',
+                              userRole: 'citizen',
+                            );
+                          },
+                        ),
                       ),
-                      const SizedBox(width: 16),
-                      _buildFeatureCard(
-                        context,
-                        'Recent Posts',
-                        Icons.list_alt,
-                        () async {
-                          final user = FirebaseAuth.instance.currentUser;
-                          final firstName =
-                              user != null
-                                  ? await UserService().fetchUserFirstName(
-                                    user.uid,
-                                  )
-                                  : 'Anonymous';
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder:
-                                  (context) => PostsScreen(
-                                    currentUserId: user?.uid ?? '',
-                                    currentUserName: firstName,
-                                    userRole: 'citizen',
-                                  ),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(width: 16),
-                      _buildFeatureCard(
-                        context,
-                        'Show Ads',
-                        Icons.verified,
-                        () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder:
-                                  (context) => CheckAdsScreen(
-                                    userRole: 'citizen',
-                                    showAcceptedOnly: true,
-                                  ),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ],
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildFeatureCard(
-    BuildContext context,
-    String title,
-    IconData icon,
-    VoidCallback onTap,
-  ) {
-    return Expanded(
-      child: Card(
-        elevation: 4,
-        color: Colors.white.withOpacity(0.9),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 40, color: Theme.of(context).primaryColor),
-              const SizedBox(height: 8),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

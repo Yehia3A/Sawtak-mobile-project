@@ -67,6 +67,8 @@ dependencies:
   provider: ^6.1.5
   open_filex: ^4.7.0
   flutter_map_cancellable_tile_provider: ^2.0.0
+  uni_links: ^0.5.1
+  app_links: ^6.4.0
 
 dev_dependencies:
   flutter_test:
