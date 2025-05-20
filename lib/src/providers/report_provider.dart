@@ -49,6 +49,8 @@ class ReportProvider extends ChangeNotifier {
   String? location;
   List<String> proofs = [];
   latlng.LatLng? selectedLatLng;
+  String? selectedCity;
+  String? selectedArea;
 
   void selectType(EmergencyType type) {
     selectedType = type;
@@ -173,6 +175,17 @@ class ReportProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void selectCity(String? city) {
+    selectedCity = city;
+    selectedArea = null;
+    notifyListeners();
+  }
+
+  void selectArea(String? area) {
+    selectedArea = area;
+    notifyListeners();
+  }
+
   Future<void> submitReport(
     BuildContext context, {
     required String userId,
@@ -182,7 +195,9 @@ class ReportProvider extends ChangeNotifier {
       if (selectedType == null ||
           titleController.text.isEmpty ||
           descriptionController.text.isEmpty ||
-          location == null) {
+          location == null ||
+          selectedCity == null ||
+          selectedArea == null) {
         throw Exception('Please fill all required fields.');
       }
 
@@ -210,6 +225,8 @@ class ReportProvider extends ChangeNotifier {
         audioPath: null,
         userId: userId,
         userName: userName,
+        city: selectedCity!,
+        area: selectedArea!,
       );
       ScaffoldMessenger.of(
         context,
@@ -220,11 +237,33 @@ class ReportProvider extends ChangeNotifier {
       location = null;
       proofs.clear();
       selectedLatLng = null;
+      selectedCity = null;
+      selectedArea = null;
       notifyListeners();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to submit report: ${e.toString()}')),
       );
     }
+  }
+
+  // Analytics: Get report counts by city
+  Future<Map<String, int>> getReportCountsByCity() async {
+    final reports = await reportService.getReports().first;
+    final Map<String, int> counts = {};
+    for (final report in reports) {
+      counts[report.city] = (counts[report.city] ?? 0) + 1;
+    }
+    return counts;
+  }
+
+  // Analytics: Get report counts by area for a given city
+  Future<Map<String, int>> getReportCountsByArea(String city) async {
+    final reports = await reportService.getReports().first;
+    final Map<String, int> counts = {};
+    for (final report in reports.where((r) => r.city == city)) {
+      counts[report.area] = (counts[report.area] ?? 0) + 1;
+    }
+    return counts;
   }
 }

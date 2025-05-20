@@ -90,4 +90,18 @@ class AdvertisementService {
   Future<void> rejectRequest(String requestId) async {
     await deleteRequest(requestId);
   }
+
+  // Get all accepted requests (for both admin and citizen)
+  Stream<List<AdvertisementRequest>> getAcceptedRequests() {
+    return _firestore
+        .collection(_collection)
+        .where('status', isEqualTo: 'accepted')
+        .snapshots()
+        .map(
+          (snapshot) =>
+              snapshot.docs
+                  .map((doc) => AdvertisementRequest.fromMap(doc.data()))
+                  .toList(),
+        );
+  }
 }

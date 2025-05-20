@@ -13,6 +13,8 @@ class Report {
   final double? latitude;
   final double? longitude;
   final DateTime createdAt;
+  final String city;
+  final String area;
 
   Report({
     required this.id,
@@ -27,6 +29,8 @@ class Report {
     this.latitude,
     this.longitude,
     required this.createdAt,
+    required this.city,
+    required this.area,
   });
 
   Map<String, dynamic> toMap() {
@@ -43,6 +47,8 @@ class Report {
       'latitude': latitude,
       'longitude': longitude,
       'createdAt': createdAt.toIso8601String(),
+      'city': city,
+      'area': area,
     };
   }
 
@@ -71,6 +77,8 @@ class Report {
       latitude: data['latitude']?.toDouble(),
       longitude: data['longitude']?.toDouble(),
       createdAt: parseDate(data['createdAt']),
+      city: data['city'] ?? '',
+      area: data['area'] ?? '',
     );
   }
 }
