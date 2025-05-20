@@ -24,12 +24,16 @@ class Attachment {
   final String name;
   final String url;
   final String type; // 'pdf', 'image', etc.
+  final bool isPending;
+  final double progress;
 
   Attachment({
     required this.id,
     required this.name,
     required this.url,
     required this.type,
+    this.isPending = false,
+    this.progress = 0.0,
   });
 
   Map<String, dynamic> toMap() {
@@ -42,6 +46,24 @@ class Attachment {
       name: map['name'] as String,
       url: map['url'] as String,
       type: map['type'] as String,
+    );
+  }
+
+  Attachment copyWith({
+    String? id,
+    String? name,
+    String? url,
+    String? type,
+    bool? isPending,
+    double? progress,
+  }) {
+    return Attachment(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      url: url ?? this.url,
+      type: type ?? this.type,
+      isPending: isPending ?? this.isPending,
+      progress: progress ?? this.progress,
     );
   }
 }

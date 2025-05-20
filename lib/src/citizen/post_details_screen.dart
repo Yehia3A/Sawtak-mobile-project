@@ -9,11 +9,14 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart' as url_launcher;
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'dart:io';
 import '../models/post.dart';
 import '../providers/post_provider.dart';
 import '../services/auth_service.dart';
 import '../services/user.serivce.dart';
 import '../providers/posts_provider.dart';
+import 'package:http/http.dart' as http;
+import 'dart:typed_data';
 
 class PostDetailsScreen extends StatefulWidget {
   final Post post;
@@ -68,25 +71,19 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
       );
 
       if (result != null) {
-        final file = result.files.first;
-        final storageRef = FirebaseStorage.instance
-            .ref()
-            .child('attachments')
-            .child('${widget.post.id}')
-            .child(file.name);
-
-        await storageRef.putData(file.bytes!);
-        final downloadUrl = await storageRef.getDownloadURL();
-
-        await postProvider.addAttachment(
-          postId: widget.post.id,
-          attachment: Attachment(
-            id: '',
-            name: file.name,
-            url: downloadUrl,
-            type: file.extension ?? 'unknown',
-          ),
-        );
+        final pickedFile = result.files.first;
+        if (pickedFile.bytes != null && pickedFile.name.isNotEmpty) {
+          await postProvider.addAttachment(
+            postId: widget.post.id,
+            fileBytes: pickedFile.bytes!,
+            fileName: pickedFile.name,
+          );
+        } else if (pickedFile.path != null) {
+          final file = File(pickedFile.path!);
+          await postProvider.addAttachment(postId: widget.post.id, file: file);
+        } else {
+          throw Exception('No file data found');
+        }
 
         setState(() => _isLoading = false);
         if (mounted) {
@@ -508,23 +505,168 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
                                 if (imageAttachment != null &&
                                     imageAttachment.url.isNotEmpty &&
                                     imageAttachment.type != 'asset') {
-                                  return CachedNetworkImage(
-                                    imageUrl: imageAttachment.url,
-                                    fit: BoxFit.cover,
-                                    placeholder:
-                                        (context, url) => const Center(
+                                  return FutureBuilder<Uint8List?>(
+                                    future: () async {
+                                      try {
+                                        final ref = FirebaseStorage.instance
+                                            .refFromURL(imageAttachment.url);
+                                        final maxSize =
+                                            10 * 1024 * 1024; // 10MB max
+                                        final data = await ref.getData(maxSize);
+                                        if (data == null) {
+                                          throw Exception(
+                                            'No data received from Firebase Storage',
+                                          );
+                                        }
+                                        return data;
+                                      } catch (e) {
+                                        print(
+                                          'Error downloading image data: $e',
+                                        );
+                                        // Try fallback to network image
+                                        try {
+                                          final response = await http.get(
+                                            Uri.parse(imageAttachment.url),
+                                          );
+                                          if (response.statusCode == 200) {
+                                            return response.bodyBytes;
+                                          }
+                                        } catch (e) {
+                                          print('Error with fallback: $e');
+                                        }
+                                        return null;
+                                      }
+                                    }(),
+                                    builder: (context, snapshot) {
+                                      if (snapshot.connectionState ==
+                                          ConnectionState.waiting) {
+                                        return const Center(
                                           child: CircularProgressIndicator(),
-                                        ),
-                                    errorWidget:
-                                        (context, url, error) => Image.asset(
-                                          'assets/homepage.jpg',
+                                        );
+                                      }
+                                      if (snapshot.hasError) {
+                                        print(
+                                          'Error downloading image: ${snapshot.error}',
+                                        );
+                                        return Container(
+                                          color: Colors.grey[300],
+                                          child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Icon(
+                                                Icons.error_outline,
+                                                color: Colors.red,
+                                                size: 40,
+                                              ),
+                                              SizedBox(height: 8),
+                                              Text(
+                                                'Failed to download image',
+                                                style: TextStyle(
+                                                  color: Colors.red,
+                                                ),
+                                              ),
+                                              Text(
+                                                'Error: ${snapshot.error}',
+                                                style: TextStyle(fontSize: 10),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      }
+                                      if (snapshot.hasData &&
+                                          snapshot.data != null) {
+                                        return Image.memory(
+                                          snapshot.data!,
                                           fit: BoxFit.cover,
+                                          errorBuilder: (
+                                            context,
+                                            error,
+                                            stackTrace,
+                                          ) {
+                                            print(
+                                              'Error displaying image: $error',
+                                            );
+                                            print('Stack trace: $stackTrace');
+                                            return Container(
+                                              color: Colors.grey[300],
+                                              child: Column(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  Icon(
+                                                    Icons.error_outline,
+                                                    color: Colors.red,
+                                                    size: 40,
+                                                  ),
+                                                  SizedBox(height: 8),
+                                                  Text(
+                                                    'Failed to display image',
+                                                    style: TextStyle(
+                                                      color: Colors.red,
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    'Error: $error',
+                                                    style: TextStyle(
+                                                      fontSize: 10,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                          },
+                                        );
+                                      }
+                                      return Container(
+                                        color: Colors.grey[300],
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.error_outline,
+                                              color: Colors.red,
+                                              size: 40,
+                                            ),
+                                            SizedBox(height: 8),
+                                            Text(
+                                              'No image data available',
+                                              style: TextStyle(
+                                                color: Colors.red,
+                                              ),
+                                            ),
+                                          ],
                                         ),
+                                      );
+                                    },
                                   );
                                 }
                                 return Image.asset(
                                   'assets/homepage.jpg',
                                   fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    print('Error loading asset image: $error');
+                                    return Container(
+                                      color: Colors.grey[300],
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.error_outline,
+                                            color: Colors.red,
+                                            size: 40,
+                                          ),
+                                          SizedBox(height: 8),
+                                          Text(
+                                            'Failed to load image',
+                                            style: TextStyle(color: Colors.red),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
                                 );
                               },
                             ),
@@ -657,7 +799,7 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       const Text(
-                                        'Attachments:',
+                                        '',
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                         ),
@@ -665,23 +807,81 @@ class _PostDetailsScreenState extends State<PostDetailsScreen> {
                                       ...widget.post.attachments.map((
                                         attachment,
                                       ) {
-                                        final isImage = (attachment.type ?? '')
-                                            .startsWith('image/');
-                                        return _buildAttachmentItem(
-                                          attachment,
-                                          isImage
-                                              ? Icons.image
-                                              : Icons.picture_as_pdf,
-                                          isImage ? Colors.blue : Colors.red,
-                                          onTap:
-                                              isImage
-                                                  ? () => _showImagePreview(
-                                                    attachment.url,
-                                                  )
-                                                  : () => _downloadAttachment(
+                                        final isImage =
+                                            attachment.type
+                                                .toLowerCase()
+                                                .contains('image') ||
+                                            attachment.name
+                                                .toLowerCase()
+                                                .endsWith('.jpg') ||
+                                            attachment.name
+                                                .toLowerCase()
+                                                .endsWith('.jpeg') ||
+                                            attachment.name
+                                                .toLowerCase()
+                                                .endsWith('.png') ||
+                                            attachment.name
+                                                .toLowerCase()
+                                                .endsWith('.webp');
+                                        if (isImage) {
+                                          return Card(
+                                            margin: const EdgeInsets.only(
+                                              bottom: 16,
+                                            ),
+                                            elevation: 0,
+                                            color: Colors.white.withOpacity(
+                                              0.8,
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(15),
+                                            ),
+                                            child: ClipRRect(
+                                              borderRadius:
+                                                  const BorderRadius.vertical(
+                                                    top: Radius.circular(15),
+                                                  ),
+                                              child: AspectRatio(
+                                                aspectRatio: 16 / 9,
+                                                child: Image.network(
+                                                  attachment.url,
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder: (
+                                                    context,
+                                                    error,
+                                                    stackTrace,
+                                                  ) {
+                                                    return Container(
+                                                      color: Colors.grey[300],
+                                                      child: const Center(
+                                                        child: Icon(
+                                                          Icons.error_outline,
+                                                          size: 40,
+                                                          color: Colors.red,
+                                                        ),
+                                                      ),
+                                                    );
+                                                  },
+                                                ),
+                                              ),
+                                            ),
+                                          );
+                                        } else {
+                                          return ListTile(
+                                            leading: const Icon(
+                                              Icons.picture_as_pdf,
+                                              color: Colors.red,
+                                            ),
+                                            title: Text(attachment.name),
+                                            trailing: IconButton(
+                                              icon: const Icon(Icons.download),
+                                              onPressed:
+                                                  () => _downloadAttachment(
                                                     attachment,
                                                   ),
-                                        );
+                                            ),
+                                          );
+                                        }
                                       }).toList(),
                                     ],
                                   ),

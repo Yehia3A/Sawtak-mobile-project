@@ -170,15 +170,16 @@ class ReportForm extends StatelessWidget {
                     scrollDirection: Axis.horizontal,
                     itemCount: provider.proofs.length,
                     itemBuilder: (context, i) {
-                      final path = provider.proofs[i];
+                      final proof = provider.proofs[i];
                       final isImage =
-                          path.endsWith('.png') ||
-                          path.endsWith('.jpg') ||
-                          path.endsWith('.jpeg');
+                          proof.type == 'image' ||
+                          proof.name.toLowerCase().endsWith('.png') ||
+                          proof.name.toLowerCase().endsWith('.jpg') ||
+                          proof.name.toLowerCase().endsWith('.jpeg');
                       Widget preview;
                       if (isImage) {
-                        preview = Image.network(
-                          path,
+                        preview = Image.memory(
+                          proof.bytes,
                           width: 80,
                           height: 80,
                           fit: BoxFit.cover,
@@ -216,19 +217,6 @@ class ReportForm extends StatelessWidget {
                                   color: Colors.white,
                                 ),
                               ),
-                            ),
-                          ),
-                          Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: IconButton(
-                              icon: Icon(
-                                Icons.download,
-                                size: 18,
-                                color: Colors.blue,
-                              ),
-                              onPressed: () => provider.downloadProof(path),
-                              tooltip: 'Download',
                             ),
                           ),
                         ],

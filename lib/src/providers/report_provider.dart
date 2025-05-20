@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gov_citizen_app/src/models/report.dart';
 import 'package:gov_citizen_app/src/services/report.service.dart';
+import 'package:gov_citizen_app/src/services/storage_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -11,6 +12,7 @@ import 'package:latlong2/latlong.dart' as latlng;
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'dart:io';
+import 'dart:typed_data';
 
 class EmergencyType {
   final String label;
@@ -19,8 +21,20 @@ class EmergencyType {
   EmergencyType(this.label, this.icon);
 }
 
+class ProofAttachment {
+  final String name;
+  final Uint8List bytes;
+  final String type; // 'image', 'pdf', etc.
+  ProofAttachment({
+    required this.name,
+    required this.bytes,
+    required this.type,
+  });
+}
+
 class ReportProvider extends ChangeNotifier {
   final ReportService reportService;
+  final StorageService _storageService = StorageService();
   ReportProvider(this.reportService);
 
   List<EmergencyType> emergencyTypes = [
@@ -47,7 +61,7 @@ class ReportProvider extends ChangeNotifier {
   TextEditingController titleController = TextEditingController();
   TextEditingController descriptionController = TextEditingController();
   String? location;
-  List<String> proofs = [];
+  List<ProofAttachment> proofs = [];
   latlng.LatLng? selectedLatLng;
   String? selectedCity;
   String? selectedArea;
@@ -132,7 +146,10 @@ class ReportProvider extends ChangeNotifier {
     final picker = ImagePicker();
     final picked = await picker.pickImage(source: ImageSource.gallery);
     if (picked != null) {
-      proofs.add(picked.path);
+      final bytes = await picked.readAsBytes();
+      proofs.add(
+        ProofAttachment(name: picked.name, bytes: bytes, type: 'image'),
+      );
       notifyListeners();
     }
   }
@@ -141,7 +158,10 @@ class ReportProvider extends ChangeNotifier {
     final picker = ImagePicker();
     final picked = await picker.pickVideo(source: ImageSource.gallery);
     if (picked != null) {
-      proofs.add(picked.path);
+      final bytes = await picked.readAsBytes();
+      proofs.add(
+        ProofAttachment(name: picked.name, bytes: bytes, type: 'video'),
+      );
       notifyListeners();
     }
   }
@@ -156,8 +176,14 @@ class ReportProvider extends ChangeNotifier {
       type: FileType.custom,
       allowedExtensions: ['pdf'],
     );
-    if (result != null && result.files.single.path != null) {
-      proofs.add(result.files.single.path!);
+    if (result != null && result.files.single.bytes != null) {
+      proofs.add(
+        ProofAttachment(
+          name: result.files.single.name,
+          bytes: result.files.single.bytes!,
+          type: 'pdf',
+        ),
+      );
       notifyListeners();
     }
   }
@@ -203,18 +229,16 @@ class ReportProvider extends ChangeNotifier {
 
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Uploading report...')));
+      ).showSnackBar(const SnackBar(content: Text('Uploading report...')));
 
       List<String> attachmentUrls = [];
-      for (var path in proofs) {
-        final file = File(path);
-        final fileName = path.split('/').last;
-        final storageRef = FirebaseStorage.instance.ref().child(
-          'reports/$fileName',
+      for (var proof in proofs) {
+        final url = await _storageService.uploadBytes(
+          proof.bytes,
+          proof.name,
+          'reports',
         );
-        final uploadTask = await storageRef.putFile(file);
-        final downloadUrl = await uploadTask.ref.getDownloadURL();
-        attachmentUrls.add(downloadUrl);
+        attachmentUrls.add(url);
       }
 
       await reportService.submitReport(
@@ -228,9 +252,12 @@ class ReportProvider extends ChangeNotifier {
         city: selectedCity!,
         area: selectedArea!,
       );
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Report submitted successfully!')));
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Report submitted successfully!')),
+      );
+
+      // Clear form
       selectedType = null;
       titleController.clear();
       descriptionController.clear();
