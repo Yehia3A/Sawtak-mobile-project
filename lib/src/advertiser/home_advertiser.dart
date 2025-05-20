@@ -5,6 +5,10 @@ import '../services/auth_service.dart';
 import '../data/egypt_locations.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:ui';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'dart:io';
+import 'dart:typed_data';
 
 class HomeAdvertiser extends StatefulWidget {
   const HomeAdvertiser({super.key});
@@ -106,6 +110,43 @@ class _HomeAdvertiserState extends State<HomeAdvertiser> {
     }
   }
 
+  Future<void> _pickAndUploadImage() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+    if (picked != null) {
+      final bytes = await picked.readAsBytes();
+      final fileName = picked.name;
+      final folder = 'ads';
+      final ext = fileName.split('.').last.toLowerCase();
+      String contentType = 'application/octet-stream';
+      if (ext == 'jpg' || ext == 'jpeg') contentType = 'image/jpeg';
+      if (ext == 'png') contentType = 'image/png';
+      if (ext == 'webp') contentType = 'image/webp';
+      final metadata = SettableMetadata(
+        contentType: contentType,
+        customMetadata: <String, String>{
+          'Content-Disposition': 'inline',
+          'Cache-Control': 'public, max-age=31536000',
+          'Access-Control-Allow-Origin': '*',
+        },
+      );
+      final ref = FirebaseStorage.instance.ref().child(
+        '$folder/${DateTime.now().millisecondsSinceEpoch}_$fileName',
+      );
+      final uploadTask = ref.putData(bytes, metadata);
+      final snapshot = await uploadTask;
+      final url = await snapshot.ref.getDownloadURL();
+      setState(() {
+        _imageUrlController.text = url;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Image uploaded successfully!')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -188,20 +229,30 @@ class _HomeAdvertiserState extends State<HomeAdvertiser> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               // Image URL field
-                              _buildInputField(
-                                'Image URL *',
-                                _imageUrlController,
-                                prefixIcon: Icons.image,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please enter an image URL';
-                                  }
-                                  final uri = Uri.tryParse(value);
-                                  if (uri == null || !uri.isAbsolute) {
-                                    return 'Please enter a valid URL';
-                                  }
-                                  return null;
-                                },
+                              Row(
+                                children: [
+                                  ElevatedButton.icon(
+                                    onPressed: _pickAndUploadImage,
+                                    icon: const Icon(Icons.upload_file),
+                                    label: const Text('Upload Image'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.amber,
+                                      foregroundColor: Colors.white,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  if (_imageUrlController.text.isNotEmpty)
+                                    Expanded(
+                                      child: Image.network(
+                                        _imageUrlController.text,
+                                        height: 60,
+                                        fit: BoxFit.cover,
+                                        errorBuilder:
+                                            (context, error, stackTrace) =>
+                                                const Icon(Icons.broken_image),
+                                      ),
+                                    ),
+                                ],
                               ),
 
                               const SizedBox(height: 16),

@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/post.dart';
+import '../services/storage_service.dart';
+import 'dart:io';
+import 'dart:typed_data';
 
 class PostProvider with ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final StorageService _storageService = StorageService();
+
   Future<void> addComment({
     required String postId,
     required String userId,
@@ -80,22 +85,43 @@ class PostProvider with ChangeNotifier {
 
   Future<void> addAttachment({
     required String postId,
-    required Attachment attachment,
+    File? file,
+    Uint8List? fileBytes,
+    String? fileName,
   }) async {
     try {
-      // Get the current post document
+      String downloadUrl;
+      String attachmentName;
+      String attachmentType;
+      if (fileBytes != null && fileName != null) {
+        downloadUrl = await _storageService.uploadBytes(
+          fileBytes,
+          fileName,
+          'posts/$postId',
+        );
+        attachmentName = fileName;
+        attachmentType = fileName.split('.').last;
+      } else if (file != null) {
+        downloadUrl = await _storageService.uploadFile(file, 'posts/$postId');
+        attachmentName = file.path.split('/').last;
+        attachmentType = file.path.split('.').last;
+      } else {
+        throw Exception('No file or fileBytes provided');
+      }
+
+      final attachment = Attachment(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        name: attachmentName,
+        url: downloadUrl,
+        type: attachmentType,
+      );
+
       final postDoc = await _firestore.collection('posts').doc(postId).get();
       final post = Post.fromFirestore(postDoc);
-
-      // Add new attachment to the list
       final updatedAttachments = [...post.attachments, attachment];
-
-      // Update Firestore
       await _firestore.collection('posts').doc(postId).update({
         'attachments': updatedAttachments.map((a) => a.toMap()).toList(),
       });
-
-      // Notify listeners to update UI
       notifyListeners();
     } catch (e) {
       print('Error adding attachment: $e');
@@ -109,7 +135,15 @@ class PostProvider with ChangeNotifier {
       final postDoc = await _firestore.collection('posts').doc(postId).get();
       final post = Post.fromFirestore(postDoc);
 
-      // Remove the attachment
+      // Find the attachment to delete
+      final attachment = post.attachments.firstWhere(
+        (a) => a.id == attachmentId,
+      );
+
+      // Delete file from Firebase Storage
+      await _storageService.deleteFile(attachment.url);
+
+      // Remove the attachment from the list
       final updatedAttachments =
           post.attachments.where((a) => a.id != attachmentId).toList();
 

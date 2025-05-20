@@ -4,6 +4,7 @@ import 'package:gov_citizen_app/src/widgets/custom_bottom_nav_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' as latlong;
+import 'package:url_launcher/url_launcher.dart';
 
 class ShowReportsScreen extends StatefulWidget {
   @override
@@ -175,6 +176,60 @@ class _ShowReportsScreenState extends State<ShowReportsScreen>
                             style: TextStyle(fontStyle: FontStyle.italic),
                           ),
                           SizedBox(height: 16),
+                          if (report.attachments.isNotEmpty) ...[
+                            const Text(
+                              'Attachments:',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 4),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children:
+                                  report.attachments.map<Widget>((url) {
+                                    final isImage =
+                                        url.toLowerCase().contains('.jpg') ||
+                                        url.toLowerCase().contains('.jpeg') ||
+                                        url.toLowerCase().contains('.png') ||
+                                        url.toLowerCase().contains('.webp');
+                                    if (isImage) {
+                                      return ClipRRect(
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: Image.network(
+                                          url,
+                                          width: 80,
+                                          height: 80,
+                                          fit: BoxFit.cover,
+                                          errorBuilder:
+                                              (c, e, s) => const Icon(
+                                                Icons.broken_image,
+                                              ),
+                                        ),
+                                      );
+                                    } else {
+                                      return GestureDetector(
+                                        onTap: () async {
+                                          // Open the file in browser or download
+                                          if (await canLaunch(url)) {
+                                            await launch(url);
+                                          }
+                                        },
+                                        child: Container(
+                                          width: 80,
+                                          height: 80,
+                                          color: Colors.black12,
+                                          child: const Icon(
+                                            Icons.insert_drive_file,
+                                            size: 40,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  }).toList(),
+                            ),
+                            SizedBox(height: 16),
+                          ],
                           if (report.latitude != null &&
                               report.longitude != null)
                             Container(
