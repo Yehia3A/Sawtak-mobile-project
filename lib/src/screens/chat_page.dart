@@ -103,10 +103,7 @@ class _ChatPageState extends State<ChatPage> {
                   }
                   final messages = snapshot.data!;
                   return ListView.builder(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 16,
-                    ),
+                    padding: const EdgeInsets.all(8),
                     itemCount: messages.length,
                     itemBuilder: (context, index) {
                       final msg = messages[index];
@@ -115,50 +112,21 @@ class _ChatPageState extends State<ChatPage> {
                         alignment:
                             isMe ? Alignment.centerRight : Alignment.centerLeft,
                         child: Container(
-                          margin: const EdgeInsets.symmetric(vertical: 6),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          constraints: BoxConstraints(
-                            maxWidth: MediaQuery.of(context).size.width * 0.75,
-                          ),
+                          padding: const EdgeInsets.all(12),
+                          margin: const EdgeInsets.symmetric(vertical: 4),
                           decoration: BoxDecoration(
-                            color:
-                                isMe
-                                    ? const Color(0xFFF9EBC8)
-                                    : Colors.white.withOpacity(0.85),
-                            borderRadius: BorderRadius.only(
-                              topLeft: const Radius.circular(18),
-                              topRight: const Radius.circular(18),
-                              bottomLeft: Radius.circular(isMe ? 18 : 6),
-                              bottomRight: Radius.circular(isMe ? 6 : 18),
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.07),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
+                            color: isMe ? Color(0xFFEACE9F) : Color(0xFFA77A37),
+                            borderRadius: BorderRadius.circular(16),
                             border:
                                 isMe
                                     ? Border.all(
-                                      color: const Color(0xFFA77A37),
-                                      width: 1.5,
+                                      color: Color(0xFFA77A37),
+                                      width: 2,
                                     )
                                     : null,
                           ),
-                          child: Text(
-                            msg.content,
-                            style: TextStyle(
-                              color:
-                                  isMe
-                                      ? const Color(0xFF7A5A1E)
-                                      : Colors.black87,
-                              fontSize: 16,
-                            ),
-                          ),
+
+                          child: Text(msg.content),
                         ),
                       );
                     },
