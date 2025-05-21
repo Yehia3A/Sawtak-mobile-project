@@ -17,7 +17,8 @@ class HomeAdvertiser extends StatefulWidget {
   State<HomeAdvertiser> createState() => _HomeAdvertiserState();
 }
 
-class _HomeAdvertiserState extends State<HomeAdvertiser> {
+class _HomeAdvertiserState extends State<HomeAdvertiser>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -31,10 +32,47 @@ class _HomeAdvertiserState extends State<HomeAdvertiser> {
   final _adService = AdvertisementService();
   final _authService = AuthService();
 
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
   @override
   void initState() {
     super.initState();
     _initializeLocations();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
+      ),
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.1),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
+      ),
+    );
+
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descriptionController.dispose();
+    _imageUrlController.dispose();
+    _linkController.dispose();
+    _animationController.dispose();
+    super.dispose();
   }
 
   void _initializeLocations() {
@@ -47,386 +85,37 @@ class _HomeAdvertiserState extends State<HomeAdvertiser> {
     setState(() {
       _selectedCity = newCity;
       _availableAreas = newCity != null ? getAreasForCity(newCity) : [];
-      _selectedArea = null; // Reset area when city changes
+      _selectedArea = null;
     });
   }
 
-  @override
-  void dispose() {
-    _titleController.dispose();
-    _descriptionController.dispose();
-    _imageUrlController.dispose();
-    _linkController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _submitForm() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    if (_selectedCity == null || _selectedArea == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select both city and area'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    final request = AdvertisementRequest(
-      id: const Uuid().v4(),
-      posterId: _authService.currentUser?.uid ?? '',
-      posterName: _authService.currentUser?.displayName ?? 'Unknown',
-      title: _titleController.text,
-      description: _descriptionController.text,
-      imageUrl: _imageUrlController.text,
-      city: _selectedCity!,
-      area: _selectedArea!,
-      link: _linkController.text,
-      createdAt: DateTime.now(),
-    );
-
-    try {
-      await _adService.createRequest(request);
-      _formKey.currentState!.reset();
-      setState(() {
-        _selectedCity = null;
-        _selectedArea = null;
-        _availableAreas = [];
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Advertisement request submitted successfully'),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
-      }
-    }
-  }
-
-  Future<void> _pickAndUploadImage() async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery);
-    if (picked != null) {
-      final bytes = await picked.readAsBytes();
-      final fileName = picked.name;
-      final folder = 'ads';
-      final ext = fileName.split('.').last.toLowerCase();
-      String contentType = 'application/octet-stream';
-      if (ext == 'jpg' || ext == 'jpeg') contentType = 'image/jpeg';
-      if (ext == 'png') contentType = 'image/png';
-      if (ext == 'webp') contentType = 'image/webp';
-      final metadata = SettableMetadata(
-        contentType: contentType,
-        customMetadata: <String, String>{
-          'Content-Disposition': 'inline',
-          'Cache-Control': 'public, max-age=31536000',
-          'Access-Control-Allow-Origin': '*',
-        },
-      );
-      final ref = FirebaseStorage.instance.ref().child(
-        '$folder/${DateTime.now().millisecondsSinceEpoch}_$fileName',
-      );
-      final uploadTask = ref.putData(bytes, metadata);
-      final snapshot = await uploadTask;
-      final url = await snapshot.ref.getDownloadURL();
-      setState(() {
-        _imageUrlController.text = url;
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Image uploaded successfully!')),
-        );
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Stack(
-        children: [
-          // Background image
-          Image.asset(
-            'assets/homepage.jpg',
-            fit: BoxFit.cover,
-            width: double.infinity,
-            height: double.infinity,
-          ),
-
-          SafeArea(
-            child: SingleChildScrollView(
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    // Header with icon
-                    Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(
-                              Icons.add_business,
-                              color: Colors.white,
-                              size: 24,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          const Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Create Advertisement',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                'Reach customers near you',
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    // Form Container with frosted glass effect
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                        child: Container(
-                          margin: const EdgeInsets.all(16),
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.2),
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Image URL field
-                              Row(
-                                children: [
-                                  ElevatedButton.icon(
-                                    onPressed: _pickAndUploadImage,
-                                    icon: const Icon(Icons.upload_file),
-                                    label: const Text('Upload Image'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.amber,
-                                      foregroundColor: Colors.white,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  if (_imageUrlController.text.isNotEmpty)
-                                    Expanded(
-                                      child: Image.network(
-                                        _imageUrlController.text,
-                                        height: 60,
-                                        fit: BoxFit.cover,
-                                        errorBuilder:
-                                            (context, error, stackTrace) =>
-                                                const Icon(Icons.broken_image),
-                                      ),
-                                    ),
-                                ],
-                              ),
-
-                              const SizedBox(height: 16),
-                              // Title field
-                              _buildInputField(
-                                'Title *',
-                                _titleController,
-                                prefixIcon: Icons.title,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please enter a title';
-                                  }
-                                  return null;
-                                },
-                              ),
-
-                              const SizedBox(height: 16),
-                              // Description field
-                              _buildInputField(
-                                'Description *',
-                                _descriptionController,
-                                prefixIcon: Icons.description,
-                                maxLines: 4,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please enter a description';
-                                  }
-                                  return null;
-                                },
-                              ),
-
-                              const SizedBox(height: 16),
-                              Text(
-                                'Location',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white.withOpacity(0.8),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              // City Dropdown with improved styling
-                              _buildDropdownField(
-                                value: _selectedCity,
-                                hint: 'Select City *',
-                                items: getAllCities(),
-                                icon: Icons.location_city,
-                                onChanged: _onCityChanged,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please select a city';
-                                  }
-                                  return null;
-                                },
-                              ),
-
-                              const SizedBox(height: 16),
-                              // Area Dropdown with improved styling
-                              _buildDropdownField(
-                                value: _selectedArea,
-                                hint: 'Select Area *',
-                                items: _availableAreas,
-                                icon: Icons.map,
-                                onChanged: (newValue) {
-                                  setState(() {
-                                    _selectedArea = newValue;
-                                  });
-                                },
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please select an area';
-                                  }
-                                  return null;
-                                },
-                              ),
-
-                              const SizedBox(height: 16),
-                              // Link field
-                              _buildInputField(
-                                'Link (Facebook, Menu, etc.)',
-                                _linkController,
-                                prefixIcon: Icons.link,
-                                validator: (value) {
-                                  if (value != null && value.isNotEmpty) {
-                                    final uri = Uri.tryParse(value);
-                                    if (uri == null || !uri.isAbsolute) {
-                                      return 'Please enter a valid URL';
-                                    }
-                                  }
-                                  return null;
-                                },
-                              ),
-
-                              const SizedBox(height: 24),
-                              // Submit Button
-                              SizedBox(
-                                width: double.infinity,
-                                height: 50,
-                                child: ElevatedButton(
-                                  onPressed: _submitForm,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.amber,
-                                    foregroundColor: Colors.white,
-                                    elevation: 2,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(25),
-                                    ),
-                                  ),
-                                  child: const Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.post_add),
-                                      SizedBox(width: 8),
-                                      Text(
-                                        'Post Advertisement',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.pushNamed(context, '/check_ads'),
-        heroTag: 'advertiser_check_ads_fab',
-        icon: const Icon(Icons.list),
-        label: const Text('Your Ads'),
-        backgroundColor: Colors.amber,
-      ),
-    );
-  }
-
-  Widget _buildInputField(
-    String hint,
-    TextEditingController controller, {
-    int maxLines = 1,
-    IconData? prefixIcon,
+  Widget _buildFormField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
     String? Function(String?)? validator,
+    int? maxLines,
   }) {
     return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.8),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
       ),
       child: TextFormField(
         controller: controller,
-        maxLines: maxLines,
-        style: const TextStyle(color: Colors.black87),
         validator: validator,
+        maxLines: maxLines ?? 1,
+        style: const TextStyle(color: Colors.white),
         decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: TextStyle(color: Colors.grey[600]),
-          prefixIcon:
-              prefixIcon != null
-                  ? Icon(prefixIcon, color: Colors.grey[600])
-                  : null,
+          labelText: label,
+          labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+          prefixIcon: Icon(icon, color: Colors.white.withOpacity(0.7)),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
-            vertical: 12,
+            vertical: 16,
           ),
         ),
       ),
@@ -439,18 +128,25 @@ class _HomeAdvertiserState extends State<HomeAdvertiser> {
     required List<String> items,
     required IconData icon,
     required void Function(String?)? onChanged,
-    required String? Function(String?)? validator,
+    String? Function(String?)? validator,
   }) {
     return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.8),
+        color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
       ),
       child: DropdownButtonFormField<String>(
         value: value,
-        hint: Text(hint),
+        hint: Text(
+          hint,
+          style: TextStyle(color: Colors.white.withOpacity(0.7)),
+        ),
         isExpanded: true,
-        icon: Icon(icon),
+        icon: Icon(icon, color: Colors.white.withOpacity(0.7)),
+        dropdownColor: Colors.black.withOpacity(0.9),
+        style: const TextStyle(color: Colors.white),
         decoration: const InputDecoration(
           contentPadding: EdgeInsets.symmetric(horizontal: 16),
           border: InputBorder.none,
@@ -463,6 +159,234 @@ class _HomeAdvertiserState extends State<HomeAdvertiser> {
         validator: validator,
       ),
     );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Stack(
+        children: [
+          // Background Image
+          Image.asset(
+            'assets/homepage.jpg',
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: double.infinity,
+          ),
+          // Gradient overlay
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.black.withOpacity(0.7),
+                  Colors.black.withOpacity(0.5),
+                  Colors.black.withOpacity(0.7),
+                ],
+              ),
+            ),
+          ),
+          // Content
+          SafeArea(
+                child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                // Welcome Section
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                  child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                      const Text(
+                                'Create Advertisement',
+                                style: TextStyle(
+                                  color: Colors.white,
+                          fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                                ),
+                              ),
+                      const SizedBox(height: 8),
+                              Text(
+                        'Reach your target audience effectively',
+                                style: TextStyle(
+                          color: Colors.white.withOpacity(0.7),
+                          fontSize: 16,
+                                ),
+                              ),
+                            ],
+                          ),
+                ),
+                // Form
+                Expanded(
+                  child: SlideTransition(
+                    position: _slideAnimation,
+                    child: FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: SingleChildScrollView(
+                          padding: const EdgeInsets.all(20),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              _buildFormField(
+                                controller: _titleController,
+                                label: 'Advertisement Title',
+                                icon: Icons.title,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter a title';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              _buildFormField(
+                                controller: _descriptionController,
+                                label: 'Description',
+                                icon: Icons.description,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter a description';
+                                  }
+                                  return null;
+                                },
+                                maxLines: 3,
+                              ),
+                              _buildFormField(
+                                controller: _imageUrlController,
+                                label: 'Image URL',
+                                icon: Icons.image,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter an image URL';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              _buildFormField(
+                                controller: _linkController,
+                                label: 'Link (optional)',
+                                icon: Icons.link,
+                              ),
+                              _buildDropdownField(
+                                value: _selectedCity,
+                                hint: 'Select City',
+                                items: getAllCities(),
+                                icon: Icons.location_city,
+                                onChanged: _onCityChanged,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please select a city';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              if (_selectedCity != null)
+                              _buildDropdownField(
+                                value: _selectedArea,
+                                  hint: 'Select Area',
+                                items: _availableAreas,
+                                  icon: Icons.location_on,
+                                  onChanged: (value) {
+                                  setState(() {
+                                      _selectedArea = value;
+                                  });
+                                },
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please select an area';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 24),
+                              ElevatedButton(
+                                  onPressed: _submitForm,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.amber,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
+                                    shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(15),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Submit Advertisement',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _submitForm() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    try {
+      final user = _authService.currentUser;
+      if (user == null) return;
+
+      final adRequest = AdvertisementRequest(
+        id: const Uuid().v4(),
+        posterId: user.uid,
+        posterName: user.displayName ?? 'Unknown',
+        title: _titleController.text,
+        description: _descriptionController.text,
+        imageUrl: _imageUrlController.text,
+        link: _linkController.text,
+        city: _selectedCity!,
+        area: _selectedArea!,
+        createdAt: DateTime.now(),
+      );
+
+      await _adService.createRequest(adRequest);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Advertisement request submitted successfully'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // Clear form
+      _titleController.clear();
+      _descriptionController.clear();
+      _imageUrlController.clear();
+      _linkController.clear();
+      setState(() {
+        _selectedCity = null;
+        _selectedArea = null;
+        _availableAreas = [];
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error submitting advertisement: $e'),
+          backgroundColor: Colors.red,
+      ),
+    );
+  }
   }
 }
 

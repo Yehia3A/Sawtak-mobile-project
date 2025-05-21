@@ -12,7 +12,8 @@ class CreatePollScreen extends StatefulWidget {
   State<CreatePollScreen> createState() => _CreatePollScreenState();
 }
 
-class _CreatePollScreenState extends State<CreatePollScreen> {
+class _CreatePollScreenState extends State<CreatePollScreen>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _contentController = TextEditingController();
@@ -24,6 +25,38 @@ class _CreatePollScreenState extends State<CreatePollScreen> {
   DateTime? _endDate;
   TimeOfDay? _endTime;
 
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
+      ),
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.1),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
+      ),
+    );
+
+    _animationController.forward();
+  }
+
   @override
   void dispose() {
     _titleController.dispose();
@@ -31,7 +64,86 @@ class _CreatePollScreenState extends State<CreatePollScreen> {
     for (var controller in _optionControllers) {
       controller.dispose();
     }
+    _animationController.dispose();
     super.dispose();
+  }
+
+  Widget _buildFormField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    required String? Function(String?)? validator,
+    int? maxLines,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
+      ),
+      child: TextFormField(
+        controller: controller,
+        validator: validator,
+        maxLines: maxLines ?? 1,
+        style: const TextStyle(color: Colors.white),
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+          prefixIcon: Icon(icon, color: Colors.white.withOpacity(0.7)),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 16,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOptionField(int index) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextFormField(
+              controller: _optionControllers[index],
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                labelText: 'Option ${index + 1}',
+                labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+                prefixIcon: Icon(
+                  Icons.radio_button_checked,
+                  color: Colors.white.withOpacity(0.7),
+                ),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter option ${index + 1}';
+                }
+                return null;
+              },
+            ),
+          ),
+          if (_optionControllers.length > 2)
+            IconButton(
+              icon: const Icon(Icons.remove_circle, color: Colors.red),
+              onPressed: () => _removeOption(index),
+            ),
+        ],
+      ),
+    );
   }
 
   void _addOption() {
@@ -55,6 +167,19 @@ class _CreatePollScreenState extends State<CreatePollScreen> {
       initialDate: _endDate ?? DateTime.now().add(const Duration(days: 1)),
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: Colors.amber,
+              onPrimary: Colors.black,
+              surface: Colors.black,
+              onSurface: Colors.white,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
     if (picked != null) {
       setState(() {
@@ -67,6 +192,19 @@ class _CreatePollScreenState extends State<CreatePollScreen> {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: _endTime ?? TimeOfDay.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: Colors.amber,
+              onPrimary: Colors.black,
+              surface: Colors.black,
+              onSurface: Colors.white,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
     if (picked != null) {
       setState(() {
@@ -75,9 +213,8 @@ class _CreatePollScreenState extends State<CreatePollScreen> {
     }
   }
 
-  Future<void> _createPoll() async {
+  Future<void> _submitPoll() async {
     if (!_formKey.currentState!.validate()) return;
-
     if (_endDate == null || _endTime == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select end date and time')),
@@ -88,20 +225,9 @@ class _CreatePollScreenState extends State<CreatePollScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser == null) {
-        throw Exception('User not logged in');
-      }
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
 
-      // Create PollOption objects from the text input
-      final options =
-          _optionControllers
-              .map((controller) => controller.text.trim())
-              .where((text) => text.isNotEmpty)
-              .map((text) => PollOption(text: text))
-              .toList();
-
-      // Combine date and time
       final endDateTime = DateTime(
         _endDate!.year,
         _endDate!.month,
@@ -110,28 +236,39 @@ class _CreatePollScreenState extends State<CreatePollScreen> {
         _endTime!.minute,
       );
 
+      final options =
+          _optionControllers
+              .map((controller) => PollOption(text: controller.text, votes: 0))
+              .toList();
+
       await PostsService().createPoll(
         title: _titleController.text,
         content: _contentController.text,
-        authorId: currentUser.uid,
-        authorName: currentUser.displayName ?? 'Admin',
-        endDate: endDateTime,
+        authorId: user.uid,
+        authorName: user.displayName ?? 'Unknown',
         options: options,
         userRole: 'gov_admin',
+        endDate: endDateTime,
       );
 
-      if (mounted) {
+      if (!mounted) return;
+
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Poll created successfully')),
+        const SnackBar(
+          content: Text('Poll created successfully'),
+          backgroundColor: Colors.green,
+        ),
         );
+
         Navigator.pop(context);
-      }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error creating poll: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -142,20 +279,73 @@ class _CreatePollScreenState extends State<CreatePollScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Create Poll')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      body: Stack(
+        children: [
+          // Background Image
+          Image.asset(
+            'assets/homepage.jpg',
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: double.infinity,
+          ),
+          // Gradient overlay
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.black.withOpacity(0.7),
+                  Colors.black.withOpacity(0.5),
+                  Colors.black.withOpacity(0.7),
+                ],
+              ),
+            ),
+          ),
+          // Content
+          SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Colors.white),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                      const SizedBox(width: 16),
+                      const Text(
+                        'Create Poll',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Form
+                Expanded(
+                  child: SlideTransition(
+                    position: _slideAnimation,
+                    child: FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(20),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              TextFormField(
+                              _buildFormField(
                 controller: _titleController,
-                decoration: const InputDecoration(
-                  labelText: 'Title',
-                  border: OutlineInputBorder(),
-                ),
+                                label: 'Poll Title',
+                                icon: Icons.title,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter a title';
@@ -163,124 +353,164 @@ class _CreatePollScreenState extends State<CreatePollScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
-              TextFormField(
+                              _buildFormField(
                 controller: _contentController,
-                decoration: const InputDecoration(
-                  labelText: 'Description',
-                  border: OutlineInputBorder(),
-                ),
+                                label: 'Description',
+                                icon: Icons.description,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter a description';
                   }
                   return null;
                 },
+                                maxLines: 3,
               ),
               const SizedBox(height: 16),
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(15),
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.2),
+                                  ),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
               const Text(
                 'End Date and Time',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
               Row(
                 children: [
                   Expanded(
-                    child: TextButton.icon(
-                      onPressed: () => _selectDate(context),
-                      icon: const Icon(Icons.calendar_today),
+                                          child: ElevatedButton.icon(
+                                            onPressed:
+                                                () => _selectDate(context),
+                                            icon: const Icon(
+                                              Icons.calendar_today,
+                                            ),
                       label: Text(
                         _endDate == null
                             ? 'Select Date'
-                            : DateFormat('MMM dd, yyyy').format(_endDate!),
+                                                  : DateFormat(
+                                                    'MMM dd, yyyy',
+                                                  ).format(_endDate!),
+                                            ),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.amber,
+                                              foregroundColor: Colors.black,
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    vertical: 16,
+                                                  ),
                       ),
                     ),
                   ),
+                                        const SizedBox(width: 16),
                   Expanded(
-                    child: TextButton.icon(
-                      onPressed: () => _selectTime(context),
+                                          child: ElevatedButton.icon(
+                                            onPressed:
+                                                () => _selectTime(context),
                       icon: const Icon(Icons.access_time),
                       label: Text(
                         _endTime == null
                             ? 'Select Time'
                             : _endTime!.format(context),
                       ),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.amber,
+                                              foregroundColor: Colors.black,
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    vertical: 16,
+                                                  ),
+                                            ),
                     ),
                   ),
                 ],
-              ),
-              if (_endDate != null && _endTime != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
-                  child: Row(
-                    children: [
-                      Chip(
-                        avatar: const Icon(Icons.event, size: 18),
-                        label: Text(
-                          '${DateFormat('MMM dd, yyyy').format(_endDate!)}  •  ${_endTime!.format(context)}',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        backgroundColor: Colors.blue[50],
                       ),
                     ],
                   ),
                 ),
+                              const SizedBox(height: 24),
               const Text(
                 'Poll Options',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: _optionControllers.length,
-                  itemBuilder: (context, index) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8.0),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: TextFormField(
-                              controller: _optionControllers[index],
-                              decoration: InputDecoration(
-                                labelText: 'Option ${index + 1}',
-                                border: const OutlineInputBorder(),
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter option text';
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
-                          if (_optionControllers.length > 2)
-                            IconButton(
-                              icon: const Icon(Icons.remove_circle),
-                              onPressed: () => _removeOption(index),
-                            ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextButton.icon(
+                              const SizedBox(height: 16),
+                              ...List.generate(
+                                _optionControllers.length,
+                                _buildOptionField,
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton.icon(
                 onPressed: _addOption,
                 icon: const Icon(Icons.add),
                 label: const Text('Add Option'),
-              ),
-              const SizedBox(height: 16),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.amber,
+                                  foregroundColor: Colors.black,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 24),
               ElevatedButton(
-                onPressed: _isLoading ? null : _createPoll,
+                                onPressed: _isLoading ? null : _submitPoll,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.amber,
+                                  foregroundColor: Colors.black,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(15),
+                                  ),
+                                ),
                 child:
                     _isLoading
-                        ? const CircularProgressIndicator()
-                        : const Text('Create Poll'),
+                                        ? const SizedBox(
+                                          height: 20,
+                                          width: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                  Colors.black,
+                                                ),
+                                          ),
+                                        )
+                                        : const Text(
+                                          'Create Poll',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
               ),
             ],
           ),
         ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

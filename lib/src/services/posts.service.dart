@@ -209,19 +209,18 @@ class PostsService {
       final comments = List<Map<String, dynamic>>.from(
         postDoc.data()?['comments'] ?? [],
       );
+
       if (parentCommentId == null) {
         comments.add(comment.toMap());
       } else {
-        final parentCommentIndex = comments.indexWhere(
-          (c) => c['id'] == parentCommentId,
+        bool added = _addReplyRecursive(
+          comments,
+          parentCommentId,
+          comment.toMap(),
         );
-        if (parentCommentIndex == -1) {
+        if (!added) {
           throw Exception('Parent comment not found');
         }
-        if (comments[parentCommentIndex]['replies'] == null) {
-          comments[parentCommentIndex]['replies'] = [];
-        }
-        comments[parentCommentIndex]['replies'].add(comment.toMap());
       }
 
       await _firestore.collection(_postsCollection).doc(postId).update({
@@ -230,6 +229,32 @@ class PostsService {
     } catch (e) {
       throw Exception('Failed to add comment: $e');
     }
+  }
+
+  // Recursively search for the parent comment and add the reply
+  bool _addReplyRecursive(
+    List<Map<String, dynamic>> comments,
+    String parentId,
+    Map<String, dynamic> reply,
+  ) {
+    for (final comment in comments) {
+      if (comment['id'] == parentId) {
+        if (comment['replies'] == null) {
+          comment['replies'] = [];
+        }
+        (comment['replies'] as List).add(reply);
+        return true;
+      }
+      if (comment['replies'] != null) {
+        final found = _addReplyRecursive(
+          List<Map<String, dynamic>>.from(comment['replies']),
+          parentId,
+          reply,
+        );
+        if (found) return true;
+      }
+    }
+    return false;
   }
 
   // Vote on a poll

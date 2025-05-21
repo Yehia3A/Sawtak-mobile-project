@@ -63,6 +63,7 @@ dependencies:
   provider: ^6.1.5
   open_filex: ^4.7.0
   flutter_map_cancellable_tile_provider: ^2.0.0
+  flutter_colorpicker: ^1.1.0
 
 dev_dependencies:
   flutter_test:
@@ -94,6 +95,7 @@ flutter:
     - assets/massageButton.svg
     - assets/profileButton.svg
     - assets/chat_bg.png
+    - assets/logo.jpg
 
   # To add assets to your application, add an assets section, like this:
   # assets:

@@ -16,6 +16,7 @@ class _EditAccountPageState extends State<EditAccountPage> {
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
   bool _isLoading = false;
   String? _selectedCity;
   String? _selectedArea;
@@ -34,7 +35,9 @@ class _EditAccountPageState extends State<EditAccountPage> {
   Future<void> _checkVerificationStatus() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user?.email != null) {
-      final isPending = await _authService.isEmailVerificationPending(user!.email!);
+      final isPending = await _authService.isEmailVerificationPending(
+        user!.email!,
+      );
       if (mounted) {
         setState(() => _isVerificationPending = isPending);
       }
@@ -46,7 +49,11 @@ class _EditAccountPageState extends State<EditAccountPage> {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+        final userDoc =
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(user.uid)
+                .get();
         final data = userDoc.data();
         if (data != null) {
           setState(() {
@@ -56,6 +63,7 @@ class _EditAccountPageState extends State<EditAccountPage> {
             _selectedCity = data['city'];
             _selectedArea = data['area'];
             _is2faEnabled = data['is2faEnabled'] ?? false;
+            _phoneController.text = data['phone'] ?? '';
           });
         }
       }
@@ -86,16 +94,17 @@ class _EditAccountPageState extends State<EditAccountPage> {
           'lastName': _lastNameController.text,
           'city': _selectedCity,
           'area': _selectedArea,
+              'phone': _phoneController.text,
         });
         if (mounted) {
-          Navigator.pop(context);
+          Navigator.pop(context, true);
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error updating profile: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error updating profile: $e')));
       }
     } finally {
       if (mounted) {
@@ -120,7 +129,10 @@ class _EditAccountPageState extends State<EditAccountPage> {
           }
           
           // Disable 2FA
-          await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .update({
             'is2faEnabled': false,
             'twoFactorMethod': null,
             'verifiedEmail': null,
@@ -139,9 +151,9 @@ class _EditAccountPageState extends State<EditAccountPage> {
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error disabling 2FA: $e')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error disabling 2FA: $e')));
         }
       } finally {
         setState(() => _is2faLoading = false);
@@ -154,7 +166,9 @@ class _EditAccountPageState extends State<EditAccountPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Please verify your email to enable 2FA. Check your inbox and click the verification link.'),
+            content: Text(
+              'Please verify your email to enable 2FA. Check your inbox and click the verification link.',
+            ),
             duration: Duration(seconds: 5),
           ),
         );
@@ -180,14 +194,18 @@ class _EditAccountPageState extends State<EditAccountPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Verification email sent. Please check your inbox and click the verification link.'),
+            content: Text(
+              'Verification email sent. Please check your inbox and click the verification link.',
+            ),
             duration: Duration(seconds: 5),
           ),
         );
       }
 
       // Start polling for verification
-      _authService.pollEmailVerification(email).listen(
+      _authService
+          .pollEmailVerification(email)
+          .listen(
         (isVerified) {
           if (isVerified && mounted) {
             setState(() {
@@ -209,9 +227,9 @@ class _EditAccountPageState extends State<EditAccountPage> {
       );
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error enabling 2FA: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error enabling 2FA: $e')));
       }
       setState(() => _isVerificationPending = false);
     } finally {
@@ -228,18 +246,16 @@ class _EditAccountPageState extends State<EditAccountPage> {
         backgroundColor: Colors.transparent,
         foregroundColor: Colors.black,
       ),
-      body: _isLoading
+      body:
+          _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.amber.shade50,
-                    Colors.white,
-                  ],
-                ),
+                    colors: [Colors.amber.shade50, Colors.white],
+                  ),
               ),
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(24),
@@ -284,8 +300,11 @@ class _EditAccountPageState extends State<EditAccountPage> {
                                 filled: true,
                                 fillColor: Colors.grey.shade50,
                               ),
-                              validator: (value) =>
-                                  value?.isEmpty ?? true ? 'Required' : null,
+                                validator:
+                                    (value) =>
+                                        value?.isEmpty ?? true
+                                            ? 'Required'
+                                            : null,
                             ),
                             const SizedBox(height: 16),
                             TextFormField(
@@ -299,8 +318,11 @@ class _EditAccountPageState extends State<EditAccountPage> {
                                 filled: true,
                                 fillColor: Colors.grey.shade50,
                               ),
-                              validator: (value) =>
-                                  value?.isEmpty ?? true ? 'Required' : null,
+                                validator:
+                                    (value) =>
+                                        value?.isEmpty ?? true
+                                            ? 'Required'
+                                            : null,
                             ),
                             const SizedBox(height: 16),
                             TextFormField(
@@ -316,6 +338,28 @@ class _EditAccountPageState extends State<EditAccountPage> {
                               ),
                               enabled: false,
                             ),
+                              const SizedBox(height: 16),
+                              TextFormField(
+                                controller: _phoneController,
+                                decoration: InputDecoration(
+                                  labelText: 'Phone Number',
+                                  prefixIcon: const Icon(Icons.phone),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  filled: true,
+                                  fillColor: Colors.grey.shade50,
+                                ),
+                                keyboardType: TextInputType.phone,
+                                maxLength: 11,
+                                validator: (value) {
+                                  final trimmed = value?.trim() ?? '';
+                                  if (trimmed.isEmpty) return 'Required';
+                                  if (!RegExp(r'^\d{11}$').hasMatch(trimmed))
+                                    return 'Phone must be exactly 11 digits';
+                                  return null;
+                                },
+                              ),
                           ],
                         ),
                       ),
@@ -348,11 +392,14 @@ class _EditAccountPageState extends State<EditAccountPage> {
                             DropdownButtonFormField<String>(
                               value: _selectedCity,
                               hint: const Text('Select City'),
-                              items: getAllCities()
-                                  .map((city) => DropdownMenuItem(
+                                items:
+                                    getAllCities()
+                                        .map(
+                                          (city) => DropdownMenuItem(
                                         value: city,
                                         child: Text(city),
-                                      ))
+                                          ),
+                                        )
                                   .toList(),
                               onChanged: (value) {
                                 setState(() {
@@ -374,13 +421,21 @@ class _EditAccountPageState extends State<EditAccountPage> {
                             DropdownButtonFormField<String>(
                               value: _selectedArea,
                               hint: const Text('Select Area'),
-                              items: (_selectedCity != null && _selectedCity!.isNotEmpty)
-                                  ? getAreasForCity(_selectedCity!).map((area) => DropdownMenuItem(
+                                items:
+                                    (_selectedCity != null &&
+                                            _selectedCity!.isNotEmpty)
+                                        ? getAreasForCity(_selectedCity!)
+                                            .map(
+                                              (area) => DropdownMenuItem(
                                         value: area,
                                         child: Text(area),
-                                      )).toList()
+                                              ),
+                                            )
+                                            .toList()
                                   : [],
-                              onChanged: (value) => setState(() => _selectedArea = value),
+                                onChanged:
+                                    (value) =>
+                                        setState(() => _selectedArea = value),
                               decoration: InputDecoration(
                                 labelText: 'Area',
                                 prefixIcon: const Icon(Icons.map_outlined),
@@ -412,11 +467,13 @@ class _EditAccountPageState extends State<EditAccountPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                               children: [
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                     children: [
                                       const Text(
                                         'Two-Factor Authentication',
@@ -436,11 +493,14 @@ class _EditAccountPageState extends State<EditAccountPage> {
                                       ),
                                       if (_isVerificationPending)
                                         Container(
-                                          margin: const EdgeInsets.only(top: 8),
+                                            margin: const EdgeInsets.only(
+                                              top: 8,
+                                            ),
                                           padding: const EdgeInsets.all(8),
                                           decoration: BoxDecoration(
                                             color: Colors.orange.shade50,
-                                            borderRadius: BorderRadius.circular(8),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
                                           ),
                                           child: Row(
                                             children: [
@@ -467,7 +527,8 @@ class _EditAccountPageState extends State<EditAccountPage> {
                                 ),
                                 Switch(
                                   value: _is2faEnabled,
-                                  onChanged: _is2faLoading ? null : _toggle2FA,
+                                    onChanged:
+                                        _is2faLoading ? null : _toggle2FA,
                                   activeColor: Colors.amber,
                                 ),
                               ],
@@ -495,13 +556,17 @@ class _EditAccountPageState extends State<EditAccountPage> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: _isLoading
+                            child:
+                                _isLoading
                               ? const SizedBox(
                                   height: 20,
                                   width: 20,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Colors.white,
+                                            ),
                                   ),
                                 )
                               : const Text(

@@ -24,14 +24,47 @@ class PostsScreen extends StatefulWidget {
   State<PostsScreen> createState() => _PostsScreenState();
 }
 
-class _PostsScreenState extends State<PostsScreen> {
+class _PostsScreenState extends State<PostsScreen>
+    with SingleTickerProviderStateMixin {
   final PostsService _postsService = PostsService();
   late String _selectedFilter;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
 
   @override
   void initState() {
     super.initState();
     _selectedFilter = widget.initialFilter;
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
+      ),
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.1),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
+      ),
+    );
+
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
   Future<void> _deletePost(String postId) async {
@@ -39,14 +72,20 @@ class _PostsScreenState extends State<PostsScreen> {
       await _postsService.deletePost(postId: postId, userRole: widget.userRole);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Post deleted successfully')),
+          const SnackBar(
+            content: Text('Post deleted successfully'),
+            backgroundColor: Colors.green,
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error deleting post: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error deleting post: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }
@@ -62,164 +101,185 @@ class _PostsScreenState extends State<PostsScreen> {
     }
   }
 
+  Widget _buildFilterChip(String label) {
+    final isSelected = _selectedFilter == label;
+    return FilterChip(
+      label: Text(
+        label,
+        style: TextStyle(
+          color: isSelected ? Colors.black : Colors.white,
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
+      selected: isSelected,
+      onSelected: (selected) {
+        if (selected) {
+          setState(() => _selectedFilter = label);
+        }
+      },
+      backgroundColor: Colors.white.withOpacity(0.1),
+      selectedColor: Colors.amber,
+      checkmarkColor: Colors.black,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(
+          color: isSelected ? Colors.amber : Colors.white.withOpacity(0.2),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      appBar: AppBar(
-        leading:
-            Navigator.canPop(context)
-                ? IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
-                  onPressed: () => Navigator.of(context).pop(),
-                )
-                : null,
-        title: Row(
-          children: [
-            Text(
-              _selectedFilter == 'Announcements' ? 'Announcements' : 'Posts',
-              style: const TextStyle(color: Colors.white),
-            ),
-            const Spacer(),
-            DropdownButton<String>(
-              value: _selectedFilter,
-              items:
-                  ['All', 'Announcements', 'Polls'].map((filter) {
-                    return DropdownMenuItem<String>(
-                      value: filter,
-                      child: Text(
-                        filter,
-                        style: const TextStyle(color: Colors.white),
-                      ),
-                    );
-                  }).toList(),
-              onChanged: (value) {
-                if (value != null) {
-                  setState(() => _selectedFilter = value);
-                }
-              },
-              dropdownColor: Colors.black,
-              style: const TextStyle(color: Colors.white),
-            ),
-          ],
-        ),
-        backgroundColor: Colors.black.withOpacity(0.8),
-        elevation: 0,
-      ),
       body: Stack(
         children: [
-          // Background image (sharp)
+          // Background Image
           Image.asset(
             'assets/homepage.jpg',
             fit: BoxFit.cover,
             width: double.infinity,
             height: double.infinity,
           ),
+          // Gradient overlay
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.black.withOpacity(0.7),
+                  Colors.black.withOpacity(0.5),
+                  Colors.black.withOpacity(0.7),
+                ],
+              ),
+            ),
+          ),
           // Content
           SafeArea(
-            child: StreamBuilder<List<Post>>(
-              stream: _postsService.getPosts(userRole: widget.userRole),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  );
-                }
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Colors.white),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                      const SizedBox(width: 16),
+                      const Text(
+                        'Posts',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Filter Chips
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
                       children: [
-                        Text(
-                          'Failed to load posts: ${snapshot.error}',
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: () => setState(() {}),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.amber,
-                            foregroundColor: Colors.white,
-                          ),
-                          child: const Text('Retry'),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-                final posts = snapshot.data ?? [];
-                final filteredPosts = _getFilteredPosts(posts);
-                if (filteredPosts.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          _selectedFilter == 'All'
-                              ? Icons.post_add
-                              : _selectedFilter == 'Announcements'
-                              ? Icons.announcement
-                              : Icons.poll,
-                          size: 64,
-                          color: Colors.white.withOpacity(0.5),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No ${_selectedFilter.toLowerCase()} yet',
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Colors.white.withOpacity(0.7),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-                return Expanded(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(0),
-                    child: Stack(
-                      children: [
-                        BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                          child: Container(
-                            color: Colors.black.withOpacity(0.7),
-                          ),
-                        ),
-                        ListView.builder(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          itemCount: filteredPosts.length,
-                          itemBuilder: (context, index) {
-                            final post = filteredPosts[index];
-                            return PostCard(
-                              post: post,
-                              currentUserId: widget.currentUserId,
-                              currentUserName: widget.currentUserName,
-                              postsService: _postsService,
-                              onDelete:
-                                  widget.userRole == 'gov_admin'
-                                      ? () => _deletePost(post.id)
-                                      : null,
-                              userRole: widget.userRole,
-                              onTap:
-                                  () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder:
-                                          (context) =>
-                                              PostDetailsScreen(post: post),
-                                    ),
-                                  ),
-                            );
-                          },
-                        ),
+                        _buildFilterChip('All'),
+                        const SizedBox(width: 8),
+                        _buildFilterChip('Announcements'),
+                        const SizedBox(width: 8),
+                        _buildFilterChip('Polls'),
                       ],
                     ),
                   ),
-                );
-              },
+                ),
+                const SizedBox(height: 16),
+                // Posts List
+                Expanded(
+                  child: SlideTransition(
+                    position: _slideAnimation,
+                    child: FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: StreamBuilder<List<Post>>(
+                        stream: _postsService.getPosts(
+                          userRole: widget.userRole,
+                        ),
+                        builder: (context, snapshot) {
+                          if (snapshot.hasError) {
+                            return Center(
+                              child: Text(
+                                'Error: ${snapshot.error}',
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                            );
+                          }
+
+                          if (!snapshot.hasData) {
+                            return const Center(
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.amber,
+                                ),
+                              ),
+                            );
+                          }
+
+                          final posts = _getFilteredPosts(snapshot.data!);
+                          if (posts.isEmpty) {
+                            return Center(
+                              child: Text(
+                                'No posts yet',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.7),
+                                  fontSize: 16,
+                                ),
+                              ),
+                            );
+                          }
+
+                          return ListView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            itemCount: posts.length,
+                            itemBuilder: (context, index) {
+                              final post = posts[index];
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 16),
+                                child: PostCard(
+                                  post: post,
+                                  currentUserId: widget.currentUserId,
+                                  currentUserName: widget.currentUserName,
+                                  postsService: _postsService,
+                                  userRole: widget.userRole,
+                                  onDelete:
+                                      widget.userRole == 'gov_admin'
+                                          ? () => _deletePost(post.id)
+                                          : null,
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder:
+                                            (context) =>
+                                                PostDetailsScreen(post: post),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

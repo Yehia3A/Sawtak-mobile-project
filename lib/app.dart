@@ -18,6 +18,7 @@ import 'src/citizen/profile_citizen.dart';
 import 'src/gov/profile_gov_admin.dart';
 import 'src/advertiser/profile_advertiser.dart';
 import 'src/account/edit_account_page.dart';
+import 'src/account/change_password_page.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -91,6 +92,11 @@ class MyApp extends StatelessWidget {
             case '/edit_account':
               return MaterialPageRoute(
                 builder: (_) => const EditAccountPage(),
+                settings: settings,
+              );
+            case '/change_password':
+              return MaterialPageRoute(
+                builder: (_) => const ChangePasswordPage(),
                 settings: settings,
               );
             case '/report':

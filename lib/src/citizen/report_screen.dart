@@ -9,6 +9,8 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
 import '../data/egypt_locations.dart';
 import 'dart:ui';
+import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
 
 class ReportScreen extends StatelessWidget {
   @override
@@ -383,13 +385,105 @@ class ReportForm extends StatelessWidget {
       context: context,
       builder: (context) {
         latlng.LatLng? tempLatLng = provider.selectedLatLng;
+        final TextEditingController _searchController = TextEditingController();
+        bool _isLoading = false;
         return StatefulBuilder(
           builder: (context, setState) {
+            Future<void> _findMyLocation() async {
+              setState(() => _isLoading = true);
+              try {
+                final position = await Geolocator.getCurrentPosition(
+                  desiredAccuracy: LocationAccuracy.high,
+                );
+                final newLocation = latlng.LatLng(
+                  position.latitude,
+                  position.longitude,
+                );
+                setState(() {
+                  tempLatLng = newLocation;
+                });
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Could not get current location: $e')),
+                );
+              }
+              setState(() => _isLoading = false);
+            }
+
+            Future<void> _searchAddress() async {
+              if (_searchController.text.isEmpty) return;
+              setState(() => _isLoading = true);
+              try {
+                final locations = await locationFromAddress(
+                  _searchController.text,
+                );
+                if (locations.isNotEmpty) {
+                  final loc = locations.first;
+                  final latLng = latlng.LatLng(loc.latitude, loc.longitude);
+                  setState(() {
+                    tempLatLng = latLng;
+                  });
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Address not found.')),
+                  );
+                }
+              } catch (e) {
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text('Error: $e')));
+              }
+              setState(() => _isLoading = false);
+            }
+
             return Dialog(
               child: Container(
                 height: 500,
                 child: Column(
                   children: [
+                    const Text(
+                      'Select Location',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _searchController,
+                            decoration: const InputDecoration(
+                              hintText: 'Search address...',
+                              border: OutlineInputBorder(),
+                              isDense: true,
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 8,
+                              ),
+                            ),
+                            onSubmitted: (_) => _searchAddress(),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.search),
+                          onPressed: _searchAddress,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: _isLoading ? null : _findMyLocation,
+                          icon: const Icon(Icons.my_location),
+                          label: const Text('Find My Location'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
                     Expanded(
                       child: FlutterMap(
                         options: MapOptions(
@@ -406,10 +500,6 @@ class ReportForm extends StatelessWidget {
                           TileLayer(
                             urlTemplate:
                                 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                            tileProvider:
-                                kIsWeb
-                                    ? CancellableNetworkTileProvider()
-                                    : null,
                           ),
                           MarkerLayer(
                             markers:
@@ -417,10 +507,12 @@ class ReportForm extends StatelessWidget {
                                     ? [
                                       Marker(
                                         point: tempLatLng!,
-                                        child: Icon(
+                                        width: 50,
+                                        height: 50,
+                                        child: const Icon(
                                           Icons.location_on,
                                           color: Colors.red,
-                                          size: 30,
+                                          size: 50,
                                         ),
                                       ),
                                     ]
@@ -434,22 +526,23 @@ class ReportForm extends StatelessWidget {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          ElevatedButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                            },
-                            child: Text('Cancel'),
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Cancel'),
                           ),
                           ElevatedButton(
-                            onPressed: () async {
-                              if (tempLatLng != null) {
-                                await provider.setHumanReadableLocation(
-                                  tempLatLng!,
-                                );
-                              }
-                              Navigator.pop(context);
-                            },
-                            child: Text('Confirm'),
+                            onPressed:
+                                _isLoading
+                                    ? null
+                                    : () async {
+                                      if (tempLatLng != null) {
+                                        await provider.setHumanReadableLocation(
+                                          tempLatLng!,
+                                        );
+                                      }
+                                      Navigator.pop(context);
+                                    },
+                            child: const Text('Confirm'),
                           ),
                         ],
                       ),

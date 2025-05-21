@@ -24,6 +24,12 @@ class UserService {
     return doc.data()?['firstName'] ?? '';
   }
 
+  // Fetch user last name
+  Future<String> fetchUserLastName(String uid) async {
+    final doc = await _firestore.collection('users').doc(uid).get();
+    return doc.data()?['lastName'] ?? '';
+  }
+
   // Update user role
   Future<void> updateUserRole(String uid, String role) async {
     await _firestore.collection('users').doc(uid).update({'role': role});
@@ -80,11 +86,11 @@ class UserService {
         'createdAt': FieldValue.serverTimestamp(),
         'isActive': true,
       };
-      
+
       if (phone != null) {
         userData['phone'] = phone;
       }
-      
+
       await _firestore.collection('users').doc(uid).set(userData);
       print('✅ User document created successfully');
     } catch (e) {
