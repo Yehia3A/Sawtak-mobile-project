@@ -122,6 +122,29 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     ),
                     const SizedBox(height: 32),
 
+
+                      // role dropdown
+                      DropdownButtonFormField<String>(
+                        value: _role,
+                        hint: const Text('Choose your role'),
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'Citizen',
+                            child: Text('Citizen'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Advertiser',
+                            child: Text('Advertiser'),
+                          ),
+                        ],
+                        onChanged: (v) => setState(() => _role = v),
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: Colors.white70,
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 16,
+                            horizontal: 20,
+
                     Form(
                       key: _formKey,
                       child: Column(
@@ -155,6 +178,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               }
                               return null;
                             },
+
                           ),
                           const SizedBox(height: 16),
 
