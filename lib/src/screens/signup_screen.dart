@@ -154,10 +154,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             child: Text('Citizen'),
                           ),
                           DropdownMenuItem(
-                            value: 'Gov Admin',
-                            child: Text('Gov Admin'),
-                          ),
-                          DropdownMenuItem(
                             value: 'Advertiser',
                             child: Text('Advertiser'),
                           ),
