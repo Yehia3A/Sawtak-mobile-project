@@ -4,6 +4,14 @@
 - Updated Announcements button in HomeCitizen to use this filter.
 - HomeCitizen now only shows feature cards (e.g., Announcements, Recent Posts) and does not show posts by default. Navigation to posts/announcements is via the feature cards.
 - PostsScreen now includes a back button in the AppBar when navigated to, allowing users to return to the home page.
+- Added `lib/src/services/notification_service.dart` for Firebase Cloud Messaging (FCM) integration.
+- Integrated notification sending in `posts.service.dart` (for announcements and polls) and `advertisement_service.dart` (for accepted ads).
+- Notifications are triggered to all users when a government admin creates an announcement, poll, or accepts an ad request.
+- Integrated authentication in notification_service.dart:
+  - FCM token is now saved to Firestore under the authenticated user's document using FirebaseAuth.
+  - Added error handling for unauthenticated users.
+  - Fixed onTokenRefresh to use instance access (_fcm.onTokenRefresh).
+- Fixed sendNotificationToAll usage in posts.service.dart to use positional arguments for title and body, matching NotificationService signature. 
 - Added a 'Show Ads' card to both HomeGovernment (lib/src/gov/home_gov.dart) and HomeCitizen (lib/src/citizen/home_citizen.dart). This card navigates to CheckAdsScreen with showAcceptedOnly=true, displaying only accepted ads.
 - Added a showAcceptedOnly flag to CheckAdsScreen (lib/src/screens/check_ads_screen.dart). When true, it uses AdvertisementService.getAcceptedRequests() to stream only accepted ads.
 - AdvertisementService (lib/src/services/advertisement_service.dart) now includes getAcceptedRequests() for streaming accepted ads.
