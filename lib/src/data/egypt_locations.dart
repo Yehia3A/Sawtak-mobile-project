@@ -85,20 +85,6 @@ const egyptLocations = [
       'Gharb Soheil',
     ],
   ),
-  EgyptLocation(
-    city: 'Qalyubia',
-    areas: [
-      'Banha',
-      'Qalyub',
-      'Shubra El Kheima',
-      'Tukh',
-      'Kafr Shukr',
-      'Khosous',
-      'Qaha',
-      'Shebin El Qanater',
-      'El Khanka',
-    ],
-  ),
 ];
 
 // Helper function to get areas for a specific city

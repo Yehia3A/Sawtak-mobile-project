@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/advertisement_request.dart';
-import 'notification_service.dart';
 
 class AdvertisementService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -85,15 +84,6 @@ class AdvertisementService {
   // Accept a pending request
   Future<void> acceptRequest(String requestId) async {
     await updateRequest(requestId, {'status': 'accepted'});
-    // Send notification to all users
-    final ad = await getRequestById(requestId);
-    if (ad != null) {
-      await NotificationService.instance.sendNotificationToAll(
-        'New Advertisement',
-        ad.title,
-        data: {'type': 'ad', 'id': ad.id},
-      );
-    }
   }
 
   // Reject a pending request (delete from collection)
